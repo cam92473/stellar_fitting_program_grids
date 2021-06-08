@@ -1,7 +1,8 @@
 class FitsIntegrals():
     def __init__(self):
-        pass
-    
+        self.cycle_through_fits()
+        self.x_array()
+
     def grav_out_str(self,grav_in):
         return "g" + str(grav_in).replace(".", "")
     
@@ -68,7 +69,3 @@ class FitsIntegrals():
 
 
 fi = FitsIntegrals()
-
-fi.cycle_through_fits()
-
-fi.x_array()

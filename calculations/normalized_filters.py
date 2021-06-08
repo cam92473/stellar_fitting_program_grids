@@ -62,6 +62,7 @@ class NormalizedFilters():
             self.area.append(integrate.trapz(self.yinterp.iloc[:,col],xcont.iloc[:,col]))
         #print(self.area) #correct
 
+
     def filter_overlaps_with_fits(self):
         from astropy.io import fits
         import numpy as np
@@ -88,7 +89,10 @@ class NormalizedFilters():
                     megalist[col].append(wv)
         
         #for ent in megalist:
-            #print(ent) #correct
+            #print(ent)
+            #print(sum(ent)/len(ent))
+            #print("\n")
+            
 
     def get_nans(self):
         import numpy as np
@@ -172,4 +176,6 @@ class NormalizedFilters():
         self.normalized2 = self.normalized2.assign(f814wnormal2 = self.yinterp2.loc[:,"f814winterp2"]/self.area[8])
         self.normalized2 = self.normalized2.assign(f110wnormal2 = self.yinterp2.loc[:,"f110winterp2"]/self.area[9])
         self.normalized2 = self.normalized2.assign(f160wnormal2 = self.yinterp2.loc[:,"f160winterp2"]/self.area[10])
-        print(self.normalized2)
+        #print(self.normalized2)
+
+go = NormalizedFilters()
