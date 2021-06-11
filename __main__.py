@@ -61,7 +61,7 @@ class ChiSquared():
                             highestelem = introwlist[-1]
                             moveon = True
                 
-                elif len(user_rownumber.get()) == 1:
+                else:
                     try:
                         rowint = int(user_rownumber.get())
                     except:
@@ -72,9 +72,6 @@ class ChiSquared():
                         lowestelem = rowint
                         highestelem = rowint
                         moveon = True
-                else:
-                    tk.messagebox.showinfo('Error', 'Please enter the number of rows with the correct syntax.')
-                    return None
                 
                 if moveon == True:
                     try:
@@ -363,6 +360,7 @@ class ChiSquared():
                 if colelement == -999:
                     self.raw_magnitudes_frame.iat[rowind,colind] = np.nan
 
+
     def convert_to_AB(self):
         self.ab_magnitudes_frame = self.raw_magnitudes_frame
         for col in self.ab_magnitudes_frame:
@@ -419,42 +417,42 @@ class ChiSquared():
         return extinctlist
 
     def minichisqfunc_single(self,tup,valid_filters_this_row):
-        g, T, Z, theta_r, E_bv = tup
+        g, T, Z, theta_r_sq, E_bv = tup
       
         best_models = []
         interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
         extinctolist = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            best_models.append(interpolist[i]*(theta_r*1e-12)**2*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
+            best_models.append(interpolist[i]*(theta_r_sq*1e-12)**2*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
         
         return best_models
 
     def minichisqfunc_double(self,tup,valid_filters_this_row):
-        g1, T1, Z1, theta_r1, E_bv1, T2, theta_r2, E_bv2 = tup
+        g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2 = tup
       
         bestmodels1 = []
         interpolist1 = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
         extinctolist1 =self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            bestmodels1.append(interpolist1[i]*(theta_r1*1e-12)**2*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
+            bestmodels1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
         bestmodels2 = []
         interpolist2 = self.interpolate(2.5,10000*T2,-1.5,valid_filters_this_row)
         extinctolist2 = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            bestmodels2.append(interpolist2[i]*(theta_r2*1e-12)**2*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
+            bestmodels2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
         
         return bestmodels1,bestmodels2
 
 
     def chisqfunc(self,tup,valid_filters_this_row,curr_row):
-        g, T, Z, theta_r, E_bv = tup
-        print("Testing row {} with g1, T1, Z1, theta_r1 ,E_bv1: ".format(self.rows[curr_row]+2), g,T,Z,theta_r,E_bv)
+        g, T, Z, theta_r_sq, E_bv = tup
+        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1: ".format(self.rows[curr_row]+2), g,T,Z,theta_r_sq,E_bv)
 
         models = []
         interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
         extinctolist = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models.append(interpolist[i]*(theta_r*1e-12)**2*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
+            models.append(interpolist[i]*(theta_r_sq*1e-24)*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
 
         summands = []
         for i,valid_ind in enumerate(valid_filters_this_row):
@@ -466,19 +464,19 @@ class ChiSquared():
         return chisq
 
     def chisqfunc2(self,tup,valid_filters_this_row,curr_row):
-        g1, T1, Z1, theta_r1, E_bv1, T2, theta_r2, E_bv2 = tup
-        print("Testing row {} with g1, T1, Z1, theta_r1, E_bv1, T2, theta_r2, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1, E_bv1, T2, theta_r2, E_bv2)
+        g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2 = tup
+        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2)
 
         models1 = []
         interpolist1 = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
         extinctolist1 =self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models1.append(interpolist1[i]*(theta_r1*1e-12)**2*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
+            models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
         models2 = []
         interpolist2 = self.interpolate(2.5,10000*T2,-1.5,valid_filters_this_row)
         extinctolist2 = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models2.append(interpolist2[i]*(theta_r2*1e-12)**2*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
+            models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
 
         summands = []
         printbands = []
@@ -495,7 +493,7 @@ class ChiSquared():
         if self.single_star == True:
             #default guess: 4.5, 3.2, 0, 0.7368, 0.33
             bnds = ((3.5,5),(.35,3.1),(-2.5,.5),(0.03,30),(0,1))
-            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1,self.ebvguess1])
+            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1**2,self.ebvguess1])
             self.results = []
 
             for curr_row in range(self.bandfluxes.shape[0]): 
@@ -509,7 +507,7 @@ class ChiSquared():
         elif self.double_star == True:
             #default guess: 4.5, 1.2, -1.0, 0.088417, 0.15, 0.375, 2.947242, 0.15  
             bnds = ((3.5,5),(.65,3.1),(-2.5,.5),(0.03,30),(0,1),(.35,.55),(.03,30),(0,1))
-            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1,self.ebvguess1,self.Tguess2,self.thetaguess2,self.ebvguess2])
+            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1**2,self.ebvguess1,self.Tguess2,self.thetaguess2**2,self.ebvguess2])
             self.results = []
 
             for curr_row in range(self.bandfluxes.shape[0]):  
@@ -553,10 +551,10 @@ class ChiSquared():
                             models.iat[curr_row,colno] = model[used]
                             used += 1
                          
-                colnames = {"F148W_meas_flux [mJy]" : [], "F148W_err [mJy]" : [], "F148W_avg_wav [nm]" : [], "F148W_mod_flux" : [], "F169M_meas_flux [mJy]" : [], "F169M_err [mJy]" : [], "F169M_avg_wav [nm]" : [], "F169M_model_flux [mJy]" : [], "F172M_meas_flux [mJy]" : [], "F172M_err [mJy]" : [], "F172M_avg_wav [nm]" : [], "F172M_model_flux [mJy]" : [], "N219M_meas_flux [mJy]" : [], "N219M_err [mJy]" : [], "N219M_avg_wav [nm]" : [], "N219M_model_flux [mJy]" : [], "N279N_meas_flux [mJy]" : [], "N279N_err [mJy]" : [], "N279N_avg_wav [nm]" : [], "N279N_model_flux [mJy]" : [], "f275w_meas_flux [mJy]" : [], "f275w_err [mJy]" : [], "f275w_avg_wav [nm]" : [], "f275w_model_flux [mJy]" : [], "f336w_meas_flux [mJy]" : [], "f336w_err [mJy]" : [], "f336w_avg_wav [nm]" : [], "f336w_model_flux [mJy]" : [], "f475w_meas_flux [mJy]" : [], "f475w_err [mJy]" : [], "f475w_avg_wav [nm]" : [], "f475w_model_flux [mJy]" : [], "f814w_meas_flux [mJy]" : [], "f814w_err [mJy]" : [], "f814w_avg_wav [nm]" : [], "f814w_model_flux [mJy]" : [], "f110w_meas_flux [mJy]" : [], "f110w_err [mJy]" : [], "f110w_avg_wav [nm]" : [], "f110w_model_flux [mJy]" : [], "f160w_meas_flux [mJy]" : [], "f160w_err [mJy]" : [], "f160w_avg_wav [nm]" : [], "f160w_model_flux [mJy]" : []}
+                colnames = {"F148W_meas_flux [mJy]" : [], "F148W_err [mJy]" : [], "F148W_avg_wav [nm]" : [], "F148W_model_flux [mJy]" : [], "F169M_meas_flux [mJy]" : [], "F169M_err [mJy]" : [], "F169M_avg_wav [nm]" : [], "F169M_model_flux [mJy]" : [], "F172M_meas_flux [mJy]" : [], "F172M_err [mJy]" : [], "F172M_avg_wav [nm]" : [], "F172M_model_flux [mJy]" : [], "N219M_meas_flux [mJy]" : [], "N219M_err [mJy]" : [], "N219M_avg_wav [nm]" : [], "N219M_model_flux [mJy]" : [], "N279N_meas_flux [mJy]" : [], "N279N_err [mJy]" : [], "N279N_avg_wav [nm]" : [], "N279N_model_flux [mJy]" : [], "f275w_meas_flux [mJy]" : [], "f275w_err [mJy]" : [], "f275w_avg_wav [nm]" : [], "f275w_model_flux [mJy]" : [], "f336w_meas_flux [mJy]" : [], "f336w_err [mJy]" : [], "f336w_avg_wav [nm]" : [], "f336w_model_flux [mJy]" : [], "f475w_meas_flux [mJy]" : [], "f475w_err [mJy]" : [], "f475w_avg_wav [nm]" : [], "f475w_model_flux [mJy]" : [], "f814w_meas_flux [mJy]" : [], "f814w_err [mJy]" : [], "f814w_avg_wav [nm]" : [], "f814w_model_flux [mJy]" : [], "f110w_meas_flux [mJy]" : [], "f110w_err [mJy]" : [], "f110w_avg_wav [nm]" : [], "f110w_model_flux [mJy]" : [], "f160w_meas_flux [mJy]" : [], "f160w_err [mJy]" : [], "f160w_avg_wav [nm]" : [], "f160w_model_flux [mJy]" : []}
                 fluxresultsdf = pd.DataFrame(colnames)
                 for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {"F148W_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,0], "F148W_err [mJy]" : self.bandfluxerrors.iat[curr_row,0], "F148W_avg_wav [nm]" : self.avgwvlist[0], "F148W_model_flux" : models.iat[curr_row,0], "F169M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,1], "F169M_err [mJy]" : self.bandfluxerrors.iat[curr_row,1], "F169M_avg_wav [nm]" : self.avgwvlist[1], "F169M_model_flux [mJy]" : models.iat[curr_row,1], "F172M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,2], "F172M_err [mJy]" : self.bandfluxerrors.iat[curr_row,2], "F172M_avg_wav [nm]" : self.avgwvlist[2], "F172M_model_flux [mJy]" : models.iat[curr_row,2], "N219M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,3], "N219M_err [mJy]" : self.bandfluxerrors.iat[curr_row,3], "N219M_avg_wav [nm]" : self.avgwvlist[3], "N219M_model_flux [mJy]" : models.iat[curr_row,3], "N279N_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,4], "N279N_err [mJy]" : self.bandfluxerrors.iat[curr_row,4], "N279N_avg_wav [nm]" : self.avgwvlist[4], "N279N_model_flux [mJy]" : models.iat[curr_row,4], "f275w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,5], "f275w_err [mJy]" : self.bandfluxerrors.iat[curr_row,5], "f275w_avg_wav [nm]" : self.avgwvlist[5], "f275w_model_flux [mJy]" : models.iat[curr_row,5], "f336w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,6], "f336w_err [mJy]" : self.bandfluxerrors.iat[curr_row,6], "f336w_avg_wav [nm]" : self.avgwvlist[6], "f336w_model_flux [mJy]" : models.iat[curr_row,6], "f475w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,7], "f475w_err [mJy]" : self.bandfluxerrors.iat[curr_row,7], "f475w_avg_wav [nm]" : self.avgwvlist[7], "f475w_model_flux [mJy]" : models.iat[curr_row,7], "f814w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,8], "f814w_err [mJy]" : self.bandfluxerrors.iat[curr_row,8], "f814w_avg_wav [nm]" : self.avgwvlist[8], "f814w_model_flux [mJy]" : models.iat[curr_row,8], "f110w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,9], "f110w_err [mJy]" : self.bandfluxerrors.iat[curr_row,9], "f110w_avg_wav [nm]" : self.avgwvlist[9], "f110w_model_flux [mJy]" : models.iat[curr_row,9], "f160w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,10], "f160w_err [mJy]" : self.bandfluxerrors.iat[curr_row,10], "f160w_avg_wav [nm]" : self.avgwvlist[10], "f160w_model_flux [mJy]" : models.iat[curr_row,10]}
+                    rowdict = {"F148W_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,0], "F148W_err [mJy]" : self.bandfluxerrors.iat[curr_row,0], "F148W_avg_wav [nm]" : self.avgwvlist[0], "F148W_model_flux [mJy]" : models.iat[curr_row,0], "F169M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,1], "F169M_err [mJy]" : self.bandfluxerrors.iat[curr_row,1], "F169M_avg_wav [nm]" : self.avgwvlist[1], "F169M_model_flux [mJy]" : models.iat[curr_row,1], "F172M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,2], "F172M_err [mJy]" : self.bandfluxerrors.iat[curr_row,2], "F172M_avg_wav [nm]" : self.avgwvlist[2], "F172M_model_flux [mJy]" : models.iat[curr_row,2], "N219M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,3], "N219M_err [mJy]" : self.bandfluxerrors.iat[curr_row,3], "N219M_avg_wav [nm]" : self.avgwvlist[3], "N219M_model_flux [mJy]" : models.iat[curr_row,3], "N279N_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,4], "N279N_err [mJy]" : self.bandfluxerrors.iat[curr_row,4], "N279N_avg_wav [nm]" : self.avgwvlist[4], "N279N_model_flux [mJy]" : models.iat[curr_row,4], "f275w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,5], "f275w_err [mJy]" : self.bandfluxerrors.iat[curr_row,5], "f275w_avg_wav [nm]" : self.avgwvlist[5], "f275w_model_flux [mJy]" : models.iat[curr_row,5], "f336w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,6], "f336w_err [mJy]" : self.bandfluxerrors.iat[curr_row,6], "f336w_avg_wav [nm]" : self.avgwvlist[6], "f336w_model_flux [mJy]" : models.iat[curr_row,6], "f475w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,7], "f475w_err [mJy]" : self.bandfluxerrors.iat[curr_row,7], "f475w_avg_wav [nm]" : self.avgwvlist[7], "f475w_model_flux [mJy]" : models.iat[curr_row,7], "f814w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,8], "f814w_err [mJy]" : self.bandfluxerrors.iat[curr_row,8], "f814w_avg_wav [nm]" : self.avgwvlist[8], "f814w_model_flux [mJy]" : models.iat[curr_row,8], "f110w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,9], "f110w_err [mJy]" : self.bandfluxerrors.iat[curr_row,9], "f110w_avg_wav [nm]" : self.avgwvlist[9], "f110w_model_flux [mJy]" : models.iat[curr_row,9], "f160w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,10], "f160w_err [mJy]" : self.bandfluxerrors.iat[curr_row,10], "f160w_avg_wav [nm]" : self.avgwvlist[10], "f160w_model_flux [mJy]" : models.iat[curr_row,10]}
                     fluxresultsdf =fluxresultsdf.append(rowdict,ignore_index=True)
                 for curr_row in range(self.bandfluxes.shape[0]):
                     fluxresultsdf = fluxresultsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
@@ -609,10 +607,11 @@ class ChiSquared():
         if self.chiparams == 1:
             
             if self.single_star == True:
+                import math
                 colnames = {'minimized chi^2' : [], 'log_g' : [], 'temperature' : [], 'abundance' : [], 'theta_r' : [], 'E(B-V)' : []}
                 chiparamsdf = pd.DataFrame(colnames).copy(deep=True)
                 for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g' : self.results[curr_row].x[0], 'temperature' : self.results[curr_row].x[1]*10000, 'abundance' : self.results[curr_row].x[2], 'theta_r' : self.results[curr_row].x[3]*1e-12, 'E(B-V)' : self.results[curr_row].x[4]}
+                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g' : self.results[curr_row].x[0], 'temperature' : self.results[curr_row].x[1]*10000, 'abundance' : self.results[curr_row].x[2], 'theta_r' : math.sqrt(self.results[curr_row].x[3])*1e-12, 'E(B-V)' : self.results[curr_row].x[4]}
                     chiparamsdf = chiparamsdf.append(rowdict,ignore_index=True)
                 for curr_row in range(self.bandfluxes.shape[0]):
                     chiparamsdf = chiparamsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
@@ -624,10 +623,11 @@ class ChiSquared():
                     tk.messagebox.showerror('Error','An error occurred. Sometimes this can happen when trying to overwrite a file. Please remove output files from the program folder and try again.')         
             
             elif self.double_star == True:
+                import math
                 colnames = {'minimized chi^2' : [], 'log_g_hot' : [], 'temperature_hot' : [], 'abundance_hot' : [], 'theta_r_hot' : [], 'E(B-V)_hot' : [], 'temperature_cool' : [], 'theta_r_cool' : [], 'E(B-V)_cool' : []}
                 chiparamsdf = pd.DataFrame(colnames).copy(deep=True)
                 for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g_hot' : self.results[curr_row].x[0], 'temperature_hot' : self.results[curr_row].x[1]*10000, 'abundance_hot' : self.results[curr_row].x[2], 'theta_r_hot' : self.results[curr_row].x[3]*1e-12, 'E(B-V)_hot' : self.results[curr_row].x[4], 'temperature_cool' : self.results[curr_row].x[5]*10000, 'theta_r_cool' : self.results[curr_row].x[6]*1e-12, 'E(B-V)_cool' : self.results[curr_row].x[7]}
+                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g_hot' : self.results[curr_row].x[0], 'temperature_hot' : self.results[curr_row].x[1]*10000, 'abundance_hot' : self.results[curr_row].x[2], 'theta_r_hot' : math.sqrt(self.results[curr_row].x[3])*1e-12, 'E(B-V)_hot' : self.results[curr_row].x[4], 'temperature_cool' : self.results[curr_row].x[5]*10000, 'theta_r_cool' : math.sqrt(self.results[curr_row].x[6])*1e-12, 'E(B-V)_cool' : self.results[curr_row].x[7]}
                     chiparamsdf = chiparamsdf.append(rowdict,ignore_index=True)
                 for curr_row in range(self.bandfluxes.shape[0]):
                     chiparamsdf = chiparamsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
@@ -780,8 +780,12 @@ class ChiSquared():
         abc.set_ylabel("Flux [mJy]")
         abc.set_title("Source at row {}".format(self.rows[curr_row]+2))
         abc.errorbar(valid_avgwv_this_row,valid_fluxes_this_row,yerr=valid_errors_this_row,fmt="o",color="orange")
-        abc.plot(valid_avgwv_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[0],color="red")
-        abc.plot(valid_avgwv_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[1],color="blue")
+        hotmod = self.minichisqfunc_double(best_tup,valid_filters_this_row)[0]
+        coolmod = self.minichisqfunc_double(best_tup,valid_filters_this_row)[1]
+        abc.plot(valid_avgwv_this_row,hotmod,color="red")
+        abc.plot(valid_avgwv_this_row,coolmod,color="blue")
+        sumofmodels = [hotmod[i] + coolmod[i] for i in range(len(hotmod))]
+        abc.plot(valid_avgwv_this_row,sumofmodels,color="limegreen")
 
         if self.saveplots == 1:
             saveimgname = self.imgfilename.replace("X","{}".format(self.rows[curr_row]+2))
@@ -831,19 +835,20 @@ class ChiSquared():
         ridge.place(x=925,y=600)
         label6 = tk.Label(topw,text="Best fit parameters",pady=15)
         label6.place(x=865,y=725)
+        import math
         label7 = tk.Label(topw,text="log_g_hot                     =          {}".format(format(self.results[curr_row].x[0],'.8e')))
         label7.place(x=1060,y=623)
         label8= tk.Label(topw,text = "temperature_hot          =          {}".format(format(self.results[curr_row].x[1]*10000,'.8e')))
         label8.place(x=1060,y=656)
         label9 = tk.Label(topw, text = "abundance_hot            =           {}".format(format(self.results[curr_row].x[2],'.8e')))
         label9.place(x=1060,y=689)
-        label10 = tk.Label(topw,text="theta_r_hot                   =           {}".format(format(self.results[curr_row].x[3]*10**(-12),'.8e')))
+        label10 = tk.Label(topw,text="theta_r_hot                   =           {}".format(format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.8e')))
         label10.place(x=1060,y=722)
         label11 = tk.Label(topw,text="E(b-v)_hot                    =           {}".format(format(self.results[curr_row].x[4],'.8e')))
         label11.place(x=1060,y=755)
         label12 = tk.Label(topw,text="temperature_cool        =           {}".format(format(self.results[curr_row].x[5],'.8e')))
         label12.place(x=1060,y=788)
-        label13 = tk.Label(topw,text="theta_r_cool                 =           {}".format(format(self.results[curr_row].x[6],'.8e')))
+        label13 = tk.Label(topw,text="theta_r_cool                 =           {}".format(format(math.sqrt(self.results[curr_row].x[6])*10**(-12),'.8e')))
         label13.place(x=1060,y=821)
         label14 = tk.Label(topw,text="E(b-v)_cool                  =           {}".format(format(self.results[curr_row].x[7],'.8e')))
         label14.place(x=1060,y=854)
