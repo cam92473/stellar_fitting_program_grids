@@ -423,7 +423,7 @@ class ChiSquared():
         interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
         extinctolist = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            best_models.append(interpolist[i]*(theta_r_sq*1e-12)**2*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
+            best_models.append(interpolist[i]*(theta_r_sq*1e-24)*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
         
         return best_models
 
@@ -516,7 +516,7 @@ class ChiSquared():
                     if np.isnan(bandflux) == False:
                         valid_filters_this_row.append(valid_ind)
                 self.results.append(opt.minimize(self.chisqfunc2, x0, args=(valid_filters_this_row,curr_row,), bounds=bnds))
-            print("results:\n",self.results)
+
 
     def display_all_results(self):
         if self.dispresults == 1:
@@ -723,13 +723,14 @@ class ChiSquared():
         ridge.place(x=925,y=600)
         label6 = tk.Label(topw,text="Best fit parameters",pady=15)
         label6.place(x=865,y=725)
+        import math
         label7 = tk.Label(topw,text="log_g                     =          {}".format(format(self.results[curr_row].x[0],'.8e')))
         label7.place(x=1060,y=643)
         label8= tk.Label(topw,text = "temperature          =          {}".format(format(self.results[curr_row].x[1]*10000,'.8e')))
         label8.place(x=1060,y=691)
         label9 = tk.Label(topw, text = "abundance            =           {}".format(format(self.results[curr_row].x[2],'.8e')))
         label9.place(x=1060,y=739)
-        label10 = tk.Label(topw,text="theta_r                   =           {}".format(format(self.results[curr_row].x[3]*10**(-12),'.8e')))
+        label10 = tk.Label(topw,text="theta_r                   =           {}".format(format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.8e')))
         label10.place(x=1060,y=787)
         label11 = tk.Label(topw,text="E(b-v)                    =           {}".format(format(self.results[curr_row].x[4],'.8e')))
         label11.place(x=1060,y=835)
