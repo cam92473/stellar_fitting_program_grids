@@ -519,10 +519,20 @@ class ChiSquared():
             print("results:\n",self.results)
 
             print("\n")
+            self.errorparams = []
             for curr_row,result in enumerate(self.results):
                 print("\n")
                 print("Inverse Hessian for {}".format(self.rows[curr_row]+2))
                 print(result.hess_inv.todense())
+                print(np.diag(result.hess_inv.todense()))
+                print(np.sqrt(np.diag(result.hess_inv.todense())))
+                self.errorparams.append(np.sqrt(np.diag(result.hess_inv.todense())))
+                #print("\n")
+                #print(type(result.hess_inv.todense()))
+                #print("\n")
+                #print(type(result.hess_inv))
+                #print("\n")
+                #print(np.diag(result.hess_inv.todense()))
 
     def display_all_results(self):
         if self.dispresults == 1:
@@ -842,23 +852,22 @@ class ChiSquared():
         ridge.place(x=925,y=600)
         label6 = tk.Label(topw,text="Best fit parameters",pady=15)
         label6.place(x=865,y=725)
-        error1darr = np.power(np.diag(self.results[curr_row].hess_inv.todense()),0.5)
         import math
-        label7 = tk.Label(topw,text="log_g_hot                     =          {}  ({})".format(format(self.results[curr_row].x[0],'.8e'),error1darr[0]))
+        label7 = tk.Label(topw,text="log_g_hot                     =          {}  ({})".format(format(self.results[curr_row].x[0],'.8e'),self.errorparams[curr_row][0]))
         label7.place(x=960,y=623)
-        label8= tk.Label(topw,text = "temperature_hot          =          {}  ({})".format(format(self.results[curr_row].x[1]*10000,'.8e'),error1darr[1]*10000))
+        label8= tk.Label(topw,text = "temperature_hot          =          {}  ({})".format(format(self.results[curr_row].x[1]*10000,'.8e'),self.errorparams[curr_row][1]*10000))
         label8.place(x=960,y=656)
-        label9 = tk.Label(topw, text = "abundance_hot            =           {}  ({})".format(format(self.results[curr_row].x[2],'.8e'),error1darr[2]))
+        label9 = tk.Label(topw, text = "abundance_hot            =           {}  ({})".format(format(self.results[curr_row].x[2],'.8e'),self.errorparams[curr_row][2]))
         label9.place(x=960,y=689)
-        label10 = tk.Label(topw,text="theta_r_hot                   =           {}  ({})".format(format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.8e'),error1darr[3]*10**(-12)))
+        label10 = tk.Label(topw,text="theta_r_hot                   =           {}  ({})".format(format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.8e'),self.errorparams[curr_row][3]*10**(-12)))
         label10.place(x=960,y=722)
-        label11 = tk.Label(topw,text="E(b-v)_hot                    =           {}  ({})".format(format(self.results[curr_row].x[4],'.8e'),error1darr[4]))
+        label11 = tk.Label(topw,text="E(b-v)_hot                    =           {}  ({})".format(format(self.results[curr_row].x[4],'.8e'),self.errorparams[curr_row][4]))
         label11.place(x=960,y=755)
-        label12 = tk.Label(topw,text="temperature_cool        =           {}  ({})".format(format(self.results[curr_row].x[5]*10000,'.8e'),error1darr[5]*10000))
+        label12 = tk.Label(topw,text="temperature_cool        =           {}  ({})".format(format(self.results[curr_row].x[5]*10000,'.8e'),self.errorparams[curr_row][5]*10000))
         label12.place(x=960,y=788)
-        label13 = tk.Label(topw,text="theta_r_cool                 =           {}  ({})".format(format(math.sqrt(self.results[curr_row].x[6])*10**(-12),'.8e'),error1darr[6]*10**(-12)))
+        label13 = tk.Label(topw,text="theta_r_cool                 =           {}  ({})".format(format(math.sqrt(self.results[curr_row].x[6])*10**(-12),'.8e'),self.errorparams[curr_row][6]*10**(-12)))
         label13.place(x=960,y=821)
-        label14 = tk.Label(topw,text="E(b-v)_cool                  =           {}  ({})".format(format(self.results[curr_row].x[7],'.8e'),error1darr[7]))
+        label14 = tk.Label(topw,text="E(b-v)_cool                  =           {}  ({})".format(format(self.results[curr_row].x[7],'.8e'),self.errorparams[curr_row][7]))
         label14.place(x=960,y=854)
         def closethesource():
             topw.quit()
