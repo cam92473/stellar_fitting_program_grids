@@ -519,8 +519,9 @@ class ChiSquared():
             print("results:\n",self.results)
 
             print("\n")
-            for result in self.results:
+            for curr_row,result in enumerate(self.results):
                 print("\n")
+                print("Inverse Hessian for {}".format(self.rows[curr_row]+2))
                 print(result.hess_inv.todense())
 
     def display_all_results(self):
