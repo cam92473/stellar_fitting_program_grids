@@ -1058,7 +1058,6 @@ class ChiSquared():
     def get_solar_radii_single(self,curr_row):
         if self.disttostar != "N":
             import math
-            self.rsol_list = []
             r_sol1 = math.sqrt(self.results[curr_row].x[3])*1e-12*self.disttostar*3.0857e21/6.9598e10
             try:
                 r_sol1_err_lo = self.errorsallrows[curr_row][3][0]*self.disttostar*3.0857e21/6.9598e10
@@ -1073,7 +1072,6 @@ class ChiSquared():
     def get_solar_radii_double(self,curr_row):
         if self.disttostar != "N":
             import math
-            self.rsol_list = []
             r_sol1 = math.sqrt(self.results[curr_row].x[3])*1e-12*self.disttostar*3.0857e21/6.9598e10
             try:
                 r_sol1_err_lo = self.errorsallrows[curr_row][3][0]*self.disttostar*3.0857e21/6.9598e10
@@ -1097,10 +1095,12 @@ class ChiSquared():
     def display_all_results(self):
         if self.dispresults == 1:
             if self.single_star == True:
+                self.rsol_list = []
                 for curr_row in range(self.bandfluxes.shape[0]): 
                     self.get_solar_radii_single(curr_row)
                     self.display_results_single(curr_row)
             elif self.double_star == True:
+                self.rsol_list = []
                 for curr_row in range(self.bandfluxes.shape[0]): 
                     self.get_solar_radii_double(curr_row)
                     self.display_results_double(curr_row)
@@ -1267,7 +1267,6 @@ class ChiSquared():
             abc.set_yscale('log')
             abc.set_xticks([150,171,199,276,337,476,833,1097,1522])
             abc.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-            abc.set_ylim(bottom=1e-5)
 
         canvas = FigureCanvasTkAgg(fig, master=topw)
         canvas.get_tk_widget().pack(anchor=tk.E)
@@ -1460,7 +1459,6 @@ class ChiSquared():
             abc.set_yscale('log')
             abc.set_xticks([150,171,199,276,337,476,833,1097,1522])
             abc.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-            abc.set_ylim(bottom=1e-5)
 
         canvas = FigureCanvasTkAgg(fig, master=topw)
         canvas.get_tk_widget().pack(anchor=tk.E)
