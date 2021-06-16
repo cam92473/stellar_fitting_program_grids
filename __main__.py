@@ -489,7 +489,7 @@ class ChiSquared():
                     entryright.delete(0,20)
                     entryright.insert(0,"{}".format(val))
                 disable2("all")
-                if checked.get() == 1:
+                if checked2.get() == 1:
                     enable2("some")
             elif starno_chosen.get() == "     2-star fit     ":
                 stardict2 = [["3.5","5"],[".65","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],[".35",".55"],[".03","30"],["0.07","1"]]
@@ -500,7 +500,7 @@ class ChiSquared():
                     entryright.delete(0,20)
                     entryright.insert(0,"{}".format(val))
                 disable2("all")
-                if checked.get() == 1:
+                if checked2.get() == 1:
                     enable2("all")
 
         def stuffy(useless):
