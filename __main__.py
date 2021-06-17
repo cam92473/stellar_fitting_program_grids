@@ -611,7 +611,7 @@ class ChiSquared():
         self.ab_magnitudes_frame.rename(columns={"f275w_vega" : "f275w_AB", "f336w_vega" : "f336w_AB", "f475w_vega" : "f475w_AB", "f814w_vega" : "f814w_AB", "f110w_vega" : "f110w_AB", "f160w_vega" : "f160w_AB"},inplace=True)
 
     def convert_to_bandflux(self):
-        self.filternames = ["F148W","F169M","F172M","N219M","N279N","f275w","f336w","f475w","f814w","f814w","f110w","f160w"]
+        self.filternames = ["F148W","F169M","F172M","N219M","N279N","f275w","f336w","f475w","f814w","f110w","f160w"]
         self.bandfluxes = pd.DataFrame()
         self.bandfluxerrors = pd.DataFrame()
         self.avgwvlist = [150.2491,161.4697,170.856,199.1508,276.0,267.884375,336.8484,476.0,833.0,1096.7245,1522.1981]
@@ -1275,25 +1275,25 @@ class ChiSquared():
         label1 = tk.Label(topw,text="Average wavelength of each filter (x):")
         label1.place(x=50,y=20)
         textbox1 = tk.Text(topw,height=6,width=30)
-        for filtername,avgwv in zip(self.filternames,valid_avgwv_this_row):
+        for filtername,avgwv in zip(valid_filters_this_row,valid_avgwv_this_row):
             textbox1.insert(tk.END,"{}      {}\n".format(filtername,avgwv))
         textbox1.place(x=50,y=50)
         label2 = tk.Label(topw,text="Bandfluxes (y, orange):")
         label2.place(x=50,y=220)
         textbox2 = tk.Text(topw,height=6,width=30)
-        for filtername,bf in zip(self.filternames,valid_fluxes_this_row):
+        for filtername,bf in zip(valid_filters_this_row,valid_fluxes_this_row):
             textbox2.insert(tk.END,"{}      {}\n".format(filtername,format(bf,'.8e')))
         textbox2.place(x=50,y=250)
         label3 = tk.Label(topw,text="Bandflux errors:")
         label3.place(x=50,y=420)
         textbox3 = tk.Text(topw,height=6,width=30)
-        for filtername,bfe in zip(self.filternames,valid_errors_this_row):
+        for filtername,bfe in zip(valid_filters_this_row,valid_errors_this_row):
             textbox3.insert(tk.END,"{}      {}\n".format(filtername,format(bfe,'.8e')))
         textbox3.place(x=50,y=450)
         label4 = tk.Label(topw,text="Model fluxes (y, blue):")
         label4.place(x=50,y=620)
         textbox4 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(self.filternames,self.minichisqfunc_single(best_tup,valid_filters_this_row)):
+        for filtername,mod in zip(valid_filters_this_row,self.minichisqfunc_single(best_tup,valid_filters_this_row)):
             textbox4.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
         textbox4.place(x=50,y=650)
         groove = tk.Canvas(topw,width=185,height=120,bd=4,relief=tk.RIDGE)
@@ -1467,31 +1467,31 @@ class ChiSquared():
         label1 = tk.Label(topw,text="Average wavelength of each filter (x):")
         label1.place(x=50,y=20)
         textbox1 = tk.Text(topw,height=6,width=30)
-        for filtername,avgwv in zip(self.filternames,valid_avgwv_this_row):
+        for filtername,avgwv in zip(valid_filters_this_row,valid_avgwv_this_row):
             textbox1.insert(tk.END,"{}      {}\n".format(filtername,avgwv))
         textbox1.place(x=50,y=50)
         label2 = tk.Label(topw,text="Bandfluxes (y, orange):")
         label2.place(x=50,y=195)
         textbox2 = tk.Text(topw,height=6,width=30)
-        for filtername,bf in zip(self.filternames,valid_fluxes_this_row):
+        for filtername,bf in zip(valid_filters_this_row,valid_fluxes_this_row):
             textbox2.insert(tk.END,"{}      {}\n".format(filtername,format(bf,'.8e')))
         textbox2.place(x=50,y=225)
         label3 = tk.Label(topw,text="Bandflux errors:")
         label3.place(x=50,y=370)
         textbox3 = tk.Text(topw,height=6,width=30)
-        for filtername,bfe in zip(self.filternames,valid_errors_this_row):
+        for filtername,bfe in zip(valid_filters_this_row,valid_errors_this_row):
             textbox3.insert(tk.END,"{}      {}\n".format(filtername,format(bfe,'.8e')))
         textbox3.place(x=50,y=400)
         label4 = tk.Label(topw,text="Hot star model fluxes (y, red):")
         label4.place(x=50,y=545)
         textbox4 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(self.filternames,self.minichisqfunc_double(best_tup,valid_filters_this_row)[0]):
+        for filtername,mod in zip(valid_filters_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[0]):
             textbox4.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
         textbox4.place(x=50,y=575)
         label5 = tk.Label(topw,text="Cool star model fluxes (y, blue):")
         label5.place(x=50,y=720)
         textbox5 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(self.filternames,self.minichisqfunc_double(best_tup,valid_filters_this_row)[1]):
+        for filtername,mod in zip(valid_filters_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[1]):
             textbox5.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
         textbox5.place(x=50,y=750)
         groove = tk.Canvas(topw,width=185,height=120,bd=4,relief=tk.RIDGE)
