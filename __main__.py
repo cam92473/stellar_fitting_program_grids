@@ -152,12 +152,12 @@ class ChiSquared():
                                             self.thetaguess2 = float(user_thetaguess2.get())
                                             self.ebvguess2 = float(user_ebvguess2.get())
                                             self.double_star = True
-                                            self.Tbound2lo = user_Tbound2lo.get()
-                                            self.Tbound2hi = user_Tbound2hi.get()
-                                            self.thetabound2lo = user_thetabound2lo.get()
-                                            self.thetabound2hi = user_thetabound2hi.get()
-                                            self.ebvbound2lo = user_ebvbound2lo.get()
-                                            self.ebvbound2hi = user_ebvbound2hi.get()
+                                            self.Tbound2lo = float(user_Tbound2lo.get())
+                                            self.Tbound2hi = float(user_Tbound2hi.get())
+                                            self.thetabound2lo = float(user_thetabound2lo.get())
+                                            self.thetabound2hi = float(user_thetabound2hi.get())
+                                            self.ebvbound2lo = float(user_ebvbound2lo.get())
+                                            self.ebvbound2hi = float(user_ebvbound2hi.get())
                                     except:
                                             tk.messagebox.showinfo('Error', "One or more parameters seem to have been entered incorrectly. Please reenter the values and try again.")
                                             return None
@@ -898,55 +898,55 @@ class ChiSquared():
                 ###
                 otherstup = (T,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row)
                 try:
-                    glowererror = g - opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[3.5,g]).root
+                    glowererror = g - opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[self.gbound1lo,g]).root
                 except:
                     glowererror = "N/A"
                 try:
-                    guppererror = opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[g,5]).root - g
+                    guppererror = opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[g,self.gbound1hi]).root - g
                 except:
                     guppererror = "N/A"
                 errorsthisrow.append([glowererror,guppererror])
                 ###
                 otherstup = (g,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row)              
                 try:
-                    T1lowererror = (T - opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[.65,T]).root)*10000
+                    T1lowererror = (T - opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[self.Tbound1lo,T]).root)*10000
                 except:
                     T1lowererror = "N/A"
                 try:    
-                    T1uppererror = (opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[T,3.1]).root - T)*10000
+                    T1uppererror = (opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[T,self.Tbound1hi]).root - T)*10000
                 except:
                     T1uppererror = "N/A"
                 errorsthisrow.append([T1lowererror,T1uppererror])
                 ###
                 otherstup = (g,T,theta_r_sq,E_bv,valid_filters_this_row,curr_row)              
                 try:
-                    Zlowererror = Z - opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[-2.5,Z]).root
+                    Zlowererror = Z - opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[self.Zbound1lo,Z]).root
                 except:
                     Zlowererror = "N/A"
                 try:
-                    Zuppererror = opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[Z,.5]).root - Z
+                    Zuppererror = opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[Z,self.Zbound1hi]).root - Z
                 except:
                     Zuppererror = "N/A"
                 errorsthisrow.append([Zlowererror,Zuppererror])
                 ###
                 otherstup = (g,T,Z,E_bv,valid_filters_this_row,curr_row)              
                 try:
-                    theta_r_sqlowererror = (theta_r_sq - opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[.03,theta_r_sq]).root)*10**(-12)
+                    theta_r_sqlowererror = (theta_r_sq - opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[self.thetabound1lo,theta_r_sq]).root)*10**(-12)
                 except:
                     theta_r_sqlowererror = "N/A"
                 try:
-                    theta_r_squppererror = (opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[theta_r_sq,30]).root-theta_r_sq)*10**(-12)
+                    theta_r_squppererror = (opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[theta_r_sq,self.thetabound1hi]).root-theta_r_sq)*10**(-12)
                 except:
                     theta_r_squppererror = "N/A"
                 errorsthisrow.append([theta_r_sqlowererror,theta_r_squppererror])
                 ###
                 otherstup = (g,T,Z,theta_r_sq,valid_filters_this_row,curr_row)              
                 try:
-                    E_bvlowererror = E_bv - opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[0,E_bv]).root
+                    E_bvlowererror = E_bv - opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[self.ebvbound1lo,E_bv]).root
                 except:
                     E_bvlowererror = "N/A"
                 try:
-                    E_bvuppererror = opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[E_bv,1]).root - E_bv
+                    E_bvuppererror = opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[E_bv,self.ebvbound1hi]).root - E_bv
                 except:
                     E_bvuppererror = "N/A"
                 errorsthisrow.append([E_bvlowererror,E_bvuppererror])
@@ -967,88 +967,88 @@ class ChiSquared():
                 ###
                 otherstup = (T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)
                 try:
-                    g1lowererror = g1-opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[3.5,g1]).root
+                    g1lowererror = g1-opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[self.gbound1lo,g1]).root
                 except:
                     g1lowererror = "N/A"
                 try:
-                    g1uppererror = opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[g1,5]).root-g1
+                    g1uppererror = opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[g1,self.gbound1hi]).root-g1
                 except:
                     g1uppererror = "N/A"
                 errorsthisrow.append([g1lowererror,g1uppererror])
                 ###
                 otherstup = (g1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    T1lowererror = (T1-opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[.65,T1]).root)*10000
+                    T1lowererror = (T1-opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[self.Tbound1lo,T1]).root)*10000
                 except:
                     T1lowererror = "N/A"
                 try:    
-                    T1uppererror = (opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[T1,3.1]).root-T1)*10000
+                    T1uppererror = (opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[T1,self.Tbound1hi]).root-T1)*10000
                 except:
                     T1uppererror = "N/A"
                 errorsthisrow.append([T1lowererror,T1uppererror])
                 ###
                 otherstup = (g1,T1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    Z1lowererror = Z1-opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[-2.5,Z1]).root
+                    Z1lowererror = Z1-opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[self.Zbound1lo,Z1]).root
                 except:
                     Z1lowererror = "N/A"
                 try:
-                    Z1uppererror = opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[Z1,.5]).root-Z1
+                    Z1uppererror = opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[Z1,self.Zbound1hi]).root-Z1
                 except:
                     Z1uppererror = "N/A"
                 errorsthisrow.append([Z1lowererror,Z1uppererror])
                 ###
                 otherstup = (g1,T1,Z1,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    theta_r1_sqlowererror = (theta_r1_sq - opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[.03,theta_r1_sq]).root)*10**(-12)
+                    theta_r1_sqlowererror = (theta_r1_sq - opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[self.thetabound1lo,theta_r1_sq]).root)*10**(-12)
                 except:
                     theta_r1_sqlowererror = "N/A"
                 try:
-                    theta_r1_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[theta_r1_sq,30]).root-theta_r1_sq)*10**(-12)
+                    theta_r1_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[theta_r1_sq,self.thetabound1hi]).root-theta_r1_sq)*10**(-12)
                 except:
                     theta_r1_squppererror = "N/A"
                 errorsthisrow.append([theta_r1_sqlowererror,theta_r1_squppererror])
                 ###
                 otherstup = (g1,T1,Z1,theta_r1_sq,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    E_bv1lowererror = E_bv1 - opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[0,E_bv1]).root
+                    E_bv1lowererror = E_bv1 - opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[self.ebvbound1lo,E_bv1]).root
                 except:
                     E_bv1lowererror = "N/A"
                 try:
-                    E_bv1uppererror = opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[E_bv1,1]).root - E_bv1
+                    E_bv1uppererror = opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[E_bv1,self.ebvbound1hi]).root - E_bv1
                 except:
                     E_bv1uppererror = "N/A"
                 errorsthisrow.append([E_bv1lowererror,E_bv1uppererror])
                 ###
                 otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    T2lowererror = (T2 - opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[.35,T2]).root)*10000
+                    T2lowererror = (T2 - opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[self.Tbound2lo,T2]).root)*10000
                 except:
                     T2lowererror = "N/A"
                 try:
-                    T2uppererror = (opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[T2,.55]).root - T2)*10000
+                    T2uppererror = (opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[T2,self.Tbound2hi]).root - T2)*10000
                 except:
                     T2uppererror = "N/A"
                 errorsthisrow.append([T2lowererror,T2uppererror])
                 ###
                 otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,T2,E_bv2,valid_filters_this_row,curr_row)              
                 try:
-                    theta_r2_sqlowererror = (theta_r2_sq - opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[.03,theta_r2_sq]).root)*10**(-12)
+                    theta_r2_sqlowererror = (theta_r2_sq - opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[self.thetabound2lo,theta_r2_sq]).root)*10**(-12)
                 except:
                     theta_r2_sqlowererror = "N/A"
                 try:
-                    theta_r2_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[theta_r2_sq,30]).root - theta_r2_sq)*10**(-12)
+                    theta_r2_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[theta_r2_sq,self.thetabound2hi]).root - theta_r2_sq)*10**(-12)
                 except:
                     theta_r2_squppererror = "N/A"
                 errorsthisrow.append([theta_r2_sqlowererror,theta_r2_squppererror])
                 ###
                 otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,valid_filters_this_row,curr_row)              
                 try:
-                    E_bv2lowererror = E_bv2 - opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[0,E_bv2]).root
+                    E_bv2lowererror = E_bv2 - opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[self.ebvbound2lo,E_bv2]).root
                 except:
                     E_bv2lowererror = "N/A"
                 try:
-                    E_bv2uppererror = opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[E_bv2,1]).root - E_bv2
+                    E_bv2uppererror = opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[E_bv2,self.ebvbound2hi]).root - E_bv2
                 except:
                     E_bv2uppererror = "N/A"
                 errorsthisrow.append([E_bv2lowererror,E_bv2uppererror])
