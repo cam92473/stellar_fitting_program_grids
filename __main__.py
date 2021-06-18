@@ -1,19 +1,35 @@
 import numpy
-from scipy.linalg.special_matrices import circulant
 import scipy.optimize as opt
 import pandas as pd
 
 class ChiSquared():
     def __init__(self):
-        self.intro_gui()
-        self.extract_measured_flux()
-        self.convert_to_AB()
-        self.convert_to_bandflux()
-        self.prepare_for_interpolation()
-        self.minimize_chisq()
-        self.find_param_errors()
-        self.display_all_results()
-        self.save_output()
+        self.filenamevar = ""
+        self.chosenstar = "     1-star fit     "
+        self.checkedset= 0
+        self.checked2set = 0
+        self.checker1set = 1
+        self.checker2set = 1
+        self.checker3set = 1
+        self.checker4set = 1
+        self.slidervalset = 0
+        self.radiusnumberset = ""
+        self.rownumberset = ""
+        self.sliderstringset = "log-log axes"
+        self.starlist1 = ["4.5","3.2","0","0.7368","0.33","N/A","N/A","N/A"]
+        self.starlist2 = ["4.5","1.2","-1.0","0.088417","0.15","0.375","2.947242","0.15"]
+        self.stardict1 = [["3.5","5"],[".35","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],["N/A","N/A"],["N/A","N/A"],["N/A","N/A"]]
+        self.stardict2 = [["3.5","5"],[".65","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],[".35",".55"],[".03","30"],["0.07","1"]]
+        while True:
+            self.intro_gui()
+            self.extract_measured_flux()
+            self.convert_to_AB()
+            self.convert_to_bandflux()
+            self.prepare_for_interpolation()
+            self.minimize_chisq()
+            self.find_param_errors()
+            self.display_all_results()
+            self.save_output()
 
     
     def intro_gui(self):
@@ -80,6 +96,7 @@ class ChiSquared():
                     try:
                         import pandas as pd
                         self.measuredata = pd.read_csv("{}".format(user_filename.get(),delimiter=","))
+                        self.filenamevar = user_filename.get()
                     except:
                         tk.messagebox.showinfo('Error', "Could not find file. Please place the file in the program folder and try again.")
                         return None
@@ -104,6 +121,7 @@ class ChiSquared():
                                     try:
                                         self.switch = True
                                         self.rows = [i-2 for i in introwlist]
+                                        self.rownumberset = user_rownumber.get()
                                         self.gguess1 = user_gguess1.get()
                                         self.Tguess1 = user_Tguess1.get()
                                         self.Zguess1 = user_Zguess1.get()
@@ -126,10 +144,19 @@ class ChiSquared():
                                         self.chiparams = checker3.get()
                                         self.saveplots = checker4.get()
                                         self.plotscale = currentsliderval.get()
-
+                                        self.checker1set = checker1.get()
+                                        self.checker2set = checker2.get()
+                                        self.checker3set = checker3.get()
+                                        self.checker4set = checker4.get()
+                                        self.checkedset = checked.get()
+                                        self.checked2set = checked2.get()
+                                        self.slidervalset = currentsliderval.get()
+                                        self.sliderstringset = sliderstring.get()
+                                        
                                         if user_radiusnumber.get() != "":
                                             try:
                                                 self.disttostar = float(user_radiusnumber.get())
+                                                self.radiusnumberset = user_radiusnumber.get()
                                             except:
                                                 tk.messagebox.showinfo('Error', "Please enter a number for the source distance, or else leave it blank.")
                                                 return None
@@ -145,8 +172,25 @@ class ChiSquared():
                                         
                                         self.single_star = False
                                         self.double_star = False
+                                        self.chosenstar = starno_chosen.get()
                                         if user_Tguess2.get() == user_thetaguess2.get() == user_ebvguess2.get() == "N/A":
                                             self.single_star = True
+                                            self.starlist1[0]=user_gguess1.get()
+                                            self.starlist1[1]=user_Tguess1.get()
+                                            self.starlist1[2]=user_Zguess1.get()
+                                            self.starlist1[3]=user_thetaguess1.get()
+                                            self.starlist1[4]=user_ebvguess1.get()
+                                            self.stardict1[0][0] = user_gbound1lo.get()
+                                            self.stardict1[0][1] = user_gbound1hi.get()
+                                            self.stardict1[1][0] = user_Tbound1lo.get()
+                                            self.stardict1[1][1] = user_Tbound1hi.get()
+                                            self.stardict1[2][0] = user_Zbound1lo.get()
+                                            self.stardict1[2][1] = user_Zbound1hi.get()
+                                            self.stardict1[3][0] = user_thetabound1lo.get()
+                                            self.stardict1[3][1] = user_thetabound1hi.get()
+                                            self.stardict1[4][0] = user_ebvbound1lo.get()
+                                            self.stardict1[4][1] = user_ebvbound1hi.get()
+
                                         else:
                                             self.Tguess2 = float(user_Tguess2.get())
                                             self.thetaguess2 = float(user_thetaguess2.get())
@@ -158,15 +202,43 @@ class ChiSquared():
                                             self.thetabound2hi = float(user_thetabound2hi.get())
                                             self.ebvbound2lo = float(user_ebvbound2lo.get())
                                             self.ebvbound2hi = float(user_ebvbound2hi.get())
+
+                                            self.starlist2[0]=user_gguess1.get()
+                                            self.starlist2[1]=user_Tguess1.get()
+                                            self.starlist2[2]=user_Zguess1.get()
+                                            self.starlist2[3]=user_thetaguess1.get()
+                                            self.starlist2[4]=user_ebvguess1.get()
+                                            self.starlist2[5]=user_Tguess2.get()
+                                            self.starlist2[6]=user_thetaguess2.get()
+                                            self.starlist2[7]=user_ebvguess2.get()
+                                            self.stardict2[0][0] = user_gbound1lo.get()
+                                            self.stardict2[0][1] = user_gbound1hi.get()
+                                            self.stardict2[1][0] = user_Tbound1lo.get()
+                                            self.stardict2[1][1] = user_Tbound1hi.get()
+                                            self.stardict2[2][0] = user_Zbound1lo.get()
+                                            self.stardict2[2][1] = user_Zbound1hi.get()
+                                            self.stardict2[3][0] = user_thetabound1lo.get()
+                                            self.stardict2[3][1] = user_thetabound1hi.get()
+                                            self.stardict2[4][0] = user_ebvbound1lo.get()
+                                            self.stardict2[4][1] = user_ebvbound1hi.get()
+                                            self.stardict2[5][0] = user_Tbound2lo.get()
+                                            self.stardict2[5][1] = user_Tbound2hi.get()
+                                            self.stardict2[6][0] = user_thetabound2lo.get()
+                                            self.stardict2[6][1] = user_thetabound2hi.get()
+                                            self.stardict2[7][0] = user_ebvbound2lo.get()
+                                            self.stardict2[7][1] = user_ebvbound2hi.get()
                                     except:
                                             tk.messagebox.showinfo('Error', "One or more parameters seem to have been entered incorrectly. Please reenter the values and try again.")
                                             return None
                                     else:
-                                        mwin.quit()
+                                        mwin.destroy()
+
         user_filename = tk.StringVar()
+        user_filename.set(self.filenamevar)
         enterfileneame = tk.Entry(mwin,textvariable = user_filename,width=66)
         enterfileneame.place(x=113,y=30)
         user_rownumber = tk.StringVar()
+        user_rownumber.set(self.rownumberset)
         enterrownumberpack = tk.Frame(mwin)
         enterrownumberpack.place(x=37,y=160)
         enterrownumber = tk.Entry(enterrownumberpack,textvariable=user_rownumber,width=15)
@@ -179,6 +251,7 @@ class ChiSquared():
         whichbutton = tk.Button(mwin,text="?",font=("TimesNewRoman 8"),command = openrows)
         whichbutton.place(x=140,y=161)
         user_radiusnumber = tk.StringVar()
+        user_radiusnumber.set(self.radiusnumberset)
         enterradiusnumberpack = tk.Frame(mwin)
         enterradiusnumberpack.place(x=37,y=265)
         enterradiusnumber = tk.Entry(enterradiusnumberpack,textvariable=user_radiusnumber,width=15)
@@ -241,6 +314,7 @@ class ChiSquared():
         
         starno_chosen = tk.StringVar()
         checked=tk.IntVar()
+        checked.set(self.checkedset)
 
         def enable(howmany):
             entryg1['state'] = tk.NORMAL
@@ -268,20 +342,18 @@ class ChiSquared():
         def stuff_vals():
             entrylist = [entryg1,entryT1,entryZ1,entrytheta1,entryebv1,entryT2,entrytheta2,entryebv2]
             if starno_chosen.get() == "     1-star fit     ":
-                starlist1 = ["4.5","3.2","0","0.7368","0.33","N/A","N/A","N/A"]
                 enable("all")
                 for i,entry in enumerate(entrylist):
                     entry.delete(0,20)
-                    entry.insert(0,"{}".format(starlist1[i]))
+                    entry.insert(0,"{}".format(self.starlist1[i]))
                 disable("all")
                 if checked.get() == 1:
                     enable("some")
             elif starno_chosen.get() == "     2-star fit     ":
-                starlist2 = ["4.5","1.2","-1.0","0.088417","0.15","0.375","2.947242","0.15"]
                 enable("all")
                 for i,entry in enumerate(entrylist):
                     entry.delete(0,20)
-                    entry.insert(0,"{}".format(starlist2[i]))
+                    entry.insert(0,"{}".format(self.starlist2[i]))
                 disable("all")
                 if checked.get() == 1:
                     enable("all")
@@ -299,15 +371,20 @@ class ChiSquared():
         gobutton = tk.Button(mwin,text="Fit data",font=("Arial",10),command = collectfilename,pady=10,padx=25,bd=2)
         gobutton.place(x=860,y=30)
         checker1 = tk.IntVar()
+        checker1.set(self.checker1set)
         checker2 = tk.IntVar()
+        checker2.set(self.checker2set)
         checker3 = tk.IntVar()
+        checker3.set(self.checker3set)
         checker4 = tk.IntVar()
+        checker4.set(self.checker4set)
         sliderstring = tk.StringVar()
         currentsliderval = tk.IntVar()
+        currentsliderval.set(self.slidervalset)
         fluxname = tk.StringVar()
         chiname = tk.StringVar()
         imgname = tk.StringVar()
-        sliderstring.set("log-log axes")
+        sliderstring.set(self.sliderstringset)
         def changesliderstring(useless):
             if currentsliderval.get() == 1:
                 sliderstring.set(" linear axes  ")
@@ -362,9 +439,12 @@ class ChiSquared():
         buttentry2 = tk.Entry(mwin, textvariable = fluxname,width=26)
         buttentry3 = tk.Entry(mwin, textvariable = chiname,width=26)
         buttentry4 = tk.Entry(mwin,textvariable = imgname,width=26)
-        buttentry2['state'] = tk.DISABLED
-        buttentry3['state'] = tk.DISABLED
-        buttentry4['state'] = tk.DISABLED
+        if checker2.get() == 0:
+            buttentry2['state'] = tk.DISABLED
+        if checker3.get() == 0:
+            buttentry3['state'] = tk.DISABLED
+        if checker4.get() == 0:
+            buttentry4['state'] = tk.DISABLED
         checkbutt1.place(x=340,y=130)
         checkbutt2.place(x=340,y=220)
         checkbutt3.place(x=340,y=290)
@@ -435,9 +515,8 @@ class ChiSquared():
         entrybebv2hi = tk.Entry(mwin,textvariable=user_ebvbound2hi,width=10)
         entrybebv2hi.place(x=xstarbentrieshi,y=650)
         
-        starno_chosen = tk.StringVar()
-        checked=tk.IntVar()
         checked2=tk.IntVar()
+        checked2.set(self.checked2set)
 
         def enable2(howmany):
             entrybg1lo['state'] = tk.NORMAL
@@ -481,9 +560,8 @@ class ChiSquared():
         def stuff_vals2():
             entrybdict = {entrybg1lo:entrybg1hi,entrybT1lo:entrybT1hi,entrybZ1lo:entrybZ1hi,entrybtheta1lo:entrybtheta1hi,entrybebv1lo:entrybebv1hi,entrybT2lo:entrybT2hi,entrybtheta2lo:entrybtheta2hi,entrybebv2lo:entrybebv2hi}
             if starno_chosen.get() == "     1-star fit     ":
-                stardict1 = [["3.5","5"],[".35","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],["N/A","N/A"],["N/A","N/A"],["N/A","N/A"]]
                 enable2("all")
-                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),stardict1):
+                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),self.stardict1):
                     entryleft.delete(0,20)
                     entryleft.insert(0,"{}".format(key))
                     entryright.delete(0,20)
@@ -492,9 +570,8 @@ class ChiSquared():
                 if checked2.get() == 1:
                     enable2("some")
             elif starno_chosen.get() == "     2-star fit     ":
-                stardict2 = [["3.5","5"],[".65","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],[".35",".55"],[".03","30"],["0.07","1"]]
                 enable2("all")
-                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),stardict2):
+                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),self.stardict2):
                     entryleft.delete(0,20)
                     entryleft.insert(0,"{}".format(key))
                     entryright.delete(0,20)
@@ -533,16 +610,15 @@ class ChiSquared():
                     enable2("all")
 
         starlabel = tk.Label(mwin,text="Fitting method",bg="alice blue").place(x=38,y=340)
-        starno_chosen.set("     1-star fit     ")
+        starno_chosen.set(self.chosenstar)
         staroptions = ["     1-star fit     ","     2-star fit     "]
         starmenu = tk.OptionMenu(mwin,starno_chosen,*staroptions,command=stuffy)
         starmenu.place(x=32,y=370)
-        checkbutt1.toggle()
-        checkbutt2.toggle()
-        checkbutt3.toggle()
-        checkbutt4.toggle()
+        grent2()
         grent2()
         grent3()
+        grent3()
+        grent4()
         grent4()
         checkbutton = tk.Checkbutton(mwin,text="Edit default guess (parameter vector)",variable=checked,command=gray,bg="mint cream")
         checkbutton.place(x=10,y=ycheckbutton)
@@ -583,8 +659,14 @@ class ChiSquared():
         badstr = badstr[:-4]
 
         if len(badstr) != 0:
+            import tkinter as tk
+            miniwin = tk.Tk()
+            miniwin.geometry("10x10+800+500")
             response = tk.messagebox.askquestion('Warning',"No entries found for {}. Do you wish to proceed?\n\n(These filters will not be fitted. If a single column is missing without its error or vice versa, you should double check the file for naming typos)".format(badstr))
-            assert response == "yes", "Program terminated"
+            if response == "yes":
+                miniwin.destroy()
+            if response == "no":
+                assert response == "yes", "Program terminated"
 
         for rowind,row in self.raw_magnitudes_frame.iterrows():
             for colind,colelement in enumerate(row):
@@ -1219,7 +1301,7 @@ class ChiSquared():
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
         import tkinter as tk
-        topw = tk.Toplevel()
+        topw = tk.Tk()
         topw.geometry("1460x900+250+20")
         topw.title("Optimization results")
         topw.resizable(0,0)
@@ -1401,7 +1483,7 @@ class ChiSquared():
             label17.place(x=640,y=727)
 
         def closethesource():
-            topw.quit()
+            topw.destroy()
         byebyebutt = tk.Button(topw, bd=3, font="Arial 10", text="Next source",command=closethesource,padx=30,pady=5)
         byebyebutt.place(x=423,y=830)
         topw.mainloop()
@@ -1410,7 +1492,7 @@ class ChiSquared():
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
         import tkinter as tk
-        topw = tk.Toplevel()
+        topw = tk.Tk()
         topw.geometry("1460x900+250+20")
         topw.title("Optimization results")
         topw.resizable(0,0)
@@ -1656,10 +1738,11 @@ class ChiSquared():
             label20.place(x=635,y=847)
 
         def closethesource():
-            topw.quit()
+            topw.destroy()
         byebyebutt = tk.Button(topw, bd=3, font="Arial 10", text="Next source",command=closethesource,padx=30,pady=5)
         byebyebutt.place(x=423,y=830)
         topw.mainloop()
+
 
 
 go = ChiSquared()
