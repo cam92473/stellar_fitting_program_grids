@@ -13,32 +13,30 @@ class ChiSquared():
         self.checker3set = 1
         self.checker4set = 1
         self.slidervalset = 0
-        self.radiusnumberset = ""
         self.rownumberset = ""
         self.sliderstringset = "log-log axes"
-        self.starlist1 = ["4.5","3.2","0","0.7368","0.33","N/A","N/A","N/A"]
-        self.starlist2 = ["4.5","1.2","-1.0","0.088417","0.15","0.375","2.947242","0.15"]
-        self.stardict1 = [["3.5","5"],[".35","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],["N/A","N/A"],["N/A","N/A"],["N/A","N/A"]]
-        self.stardict2 = [["3.5","5"],[".65","3.1"],["-2.5",".5"],["0.03","30"],["0.07","1"],[".35",".55"],[".03","30"],["0.07","1"]]
+        self.starlist1 = ["0.7368","0.03","30","N/A","N/A","N/A"]
+        self.starlist2 = ["0.088417","0.03","30","2.947242","0.03","30"]
+        self.stardict1 = [["3.5","5","0"],[".35","3.1","0"],["-2.5",".5","0"],["0.07","1","0"],["N/A","N/A","N/A"],["N/A","N/A","N/A"]]
+        self.stardict2 = [["3.5","5","0"],[".65","3.1","0"],["-2.5",".5","0"],["0.07","1","0"],[".35",".55","0"],["0.07","1","0"]]
         while True:
             self.intro_gui()
+            self.buildGrid()
             self.extract_measured_flux()
             self.convert_to_AB()
             self.convert_to_bandflux()
             self.prepare_for_interpolation()
             self.minimize_chisq()
-            self.find_param_errors()
             self.display_all_results()
             self.save_output()
 
-    
     def intro_gui(self):
         self.switch = False
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
         import tkinter as tk
         mwin = tk.Tk()
-        mwin.geometry("1030x700+520+150")
+        mwin.geometry("1225x700+520+150")
         mwin.title("Stellar Fitting")
         mwin.config(bg='alice blue')
         mwin.resizable(0,0)
@@ -105,7 +103,7 @@ class ChiSquared():
                             tk.messagebox.showinfo('Error', "Rows specified are out of range.")
                             return None
                         else:
-                            if (checker2.get() == 1 and fluxname.get()[-4:] != ".csv") or (checker3.get() == 1 and chiname.get()[-4:] != ".csv"):
+                            if (checker2.get() == 1 and weightedmeanvarname.get()[-4:] != ".csv") or (checker3.get() == 1 and gridname.get()[-4:] != ".csv"):
                                 tk.messagebox.showinfo('Error', "The filenames specified are not allowed. Make sure to use the .csv extension.")
                                 return None
                             elif checker4.get() == 1 and (imgname.get()[-4:] != ".png" and imgname.get()[-4:] != ".jpg"):
@@ -113,8 +111,8 @@ class ChiSquared():
                                 return None
                             else:
                                 try:
-                                    a = int(fluxname.get()[0])
-                                    b = int(chiname.get()[0])
+                                    a = int(weightedmeanvarname.get()[0])
+                                    b = int(gridname.get()[0])
                                     c = int(imgname.get()[0])
                                     return None
                                 except:
@@ -122,26 +120,10 @@ class ChiSquared():
                                         self.switch = True
                                         self.rows = [i-2 for i in introwlist]
                                         self.rownumberset = user_rownumber.get()
-                                        self.gguess1 = user_gguess1.get()
-                                        self.Tguess1 = user_Tguess1.get()
-                                        self.Zguess1 = user_Zguess1.get()
-                                        self.thetaguess1 = user_thetaguess1.get()
-                                        self.ebvguess1 = user_ebvguess1.get()
-
-                                        self.gbound1lo = user_gbound1lo.get()
-                                        self.gbound1hi = user_gbound1hi.get()
-                                        self.Tbound1lo = user_Tbound1lo.get()
-                                        self.Tbound1hi = user_Tbound1hi.get()
-                                        self.Zbound1lo = user_Zbound1lo.get()
-                                        self.Zbound1hi = user_Zbound1hi.get()
-                                        self.thetabound1lo = user_thetabound1lo.get()
-                                        self.thetabound1hi = user_thetabound1hi.get()
-                                        self.ebvbound1lo = user_ebvbound1lo.get()
-                                        self.ebvbound1hi = user_ebvbound1hi.get()
 
                                         self.dispresults = checker1.get()
-                                        self.fluxresults = checker2.get()
-                                        self.chiparams = checker3.get()
+                                        self.weightedmeanvarresults = checker2.get()
+                                        self.gridresults = checker3.get()
                                         self.saveplots = checker4.get()
                                         self.plotscale = currentsliderval.get()
                                         self.checker1set = checker1.get()
@@ -152,83 +134,122 @@ class ChiSquared():
                                         self.checked2set = checked2.get()
                                         self.slidervalset = currentsliderval.get()
                                         self.sliderstringset = sliderstring.get()
-                                        
-                                        if user_radiusnumber.get() != "":
-                                            try:
-                                                self.disttostar = float(user_radiusnumber.get())
-                                                self.radiusnumberset = user_radiusnumber.get()
-                                            except:
-                                                tk.messagebox.showinfo('Error', "Please enter a number for the source distance, or else leave it blank.")
-                                                return None
-                                        else:
-                                            self.disttostar = "N"
 
                                         if checker2.get() == 1:
-                                            self.fluxfilename = fluxname.get()
+                                            self.weightedmeanvarname = weightedmeanvarname.get()
                                         if checker3.get() == 1:
-                                            self.chifilename = chiname.get()
+                                            self.gridname = gridname.get()
                                         if checker4.get() == 1:
                                             self.imgfilename = imgname.get()
                                         
                                         self.single_star = False
                                         self.double_star = False
                                         self.chosenstar = starno_chosen.get()
-                                        if user_Tguess2.get() == user_thetaguess2.get() == user_ebvguess2.get() == "N/A":
+                                        if starno_chosen.get() == "     1-star fit     ":
                                             self.single_star = True
-                                            self.starlist1[0]=user_gguess1.get()
-                                            self.starlist1[1]=user_Tguess1.get()
-                                            self.starlist1[2]=user_Zguess1.get()
-                                            self.starlist1[3]=user_thetaguess1.get()
-                                            self.starlist1[4]=user_ebvguess1.get()
-                                            self.stardict1[0][0] = user_gbound1lo.get()
-                                            self.stardict1[0][1] = user_gbound1hi.get()
-                                            self.stardict1[1][0] = user_Tbound1lo.get()
-                                            self.stardict1[1][1] = user_Tbound1hi.get()
-                                            self.stardict1[2][0] = user_Zbound1lo.get()
-                                            self.stardict1[2][1] = user_Zbound1hi.get()
-                                            self.stardict1[3][0] = user_thetabound1lo.get()
-                                            self.stardict1[3][1] = user_thetabound1hi.get()
-                                            self.stardict1[4][0] = user_ebvbound1lo.get()
-                                            self.stardict1[4][1] = user_ebvbound1hi.get()
+
+                                            self.thetaguess1 = float(user_thetaguess1.get())
+                                            self.thetabound1lo = float(user_thetabound1lo.get())
+                                            self.thetabound1hi = float(user_thetabound1hi.get())
+
+                                            self.g1lowest = float(user_g1lowest.get())
+                                            self.g1highest = float(user_g1highest.get())
+                                            self.g1num = int(user_g1num.get())
+                                            self.T1lowest = float(user_T1lowest.get())
+                                            self.T1highest = float(user_T1highest.get())
+                                            self.T1num = int(user_T1num.get())
+                                            self.Z1lowest = float(user_Z1lowest.get())
+                                            self.Z1highest = float(user_Z1highest.get())
+                                            self.Z1num = int(user_Z1num.get())
+                                            self.ebv1lowest = float(user_ebv1lowest.get())
+                                            self.ebv1highest = float(user_ebv1highest.get())
+                                            self.ebv1num = int(user_ebv1num.get())
+
+                                            '''print("g1lowest ",self.g1lowest)
+                                            print("g1highest ",self.g1highest)
+                                            print("g1num ",self.g1num)
+                                            print("T1lowest ",self.T1lowest)
+                                            print("T1highest ",self.T1highest)
+                                            print("T1num ",self.T1num)
+                                            print("Z1lowest ",self.Z1lowest)
+                                            print("Z1highest ",self.Z1highest)
+                                            print("Z1num ",self.Z1num)
+                                            print("ebv1lowest ",self.ebv1lowest)
+                                            print("ebv1highest ",self.ebv1highest)
+                                            print("ebv1num ",self.ebv1num)'''
+
+                                            self.starlist1[0] = user_thetaguess1.get()
+                                            self.starlist1[1] = user_thetabound1lo.get()
+                                            self.starlist1[2] = user_thetabound1hi.get()
+                                            self.stardict1[0][0] = user_g1lowest.get()
+                                            self.stardict1[0][1] = user_g1highest.get()
+                                            self.stardict1[0][2] = user_g1num.get()
+                                            self.stardict1[1][0] = user_T1lowest.get()
+                                            self.stardict1[1][1] = user_T1highest.get()
+                                            self.stardict1[1][2] = user_T1num.get()
+                                            self.stardict1[2][0] = user_Z1lowest.get()
+                                            self.stardict1[2][1] = user_Z1highest.get()
+                                            self.stardict1[2][2] = user_Z1num.get()
+                                            self.stardict1[3][0] = user_ebv1lowest.get()
+                                            self.stardict1[3][1] = user_ebv1highest.get()
+                                            self.stardict1[3][2] = user_ebv1num.get()
 
                                         else:
-                                            self.Tguess2 = float(user_Tguess2.get())
-                                            self.thetaguess2 = float(user_thetaguess2.get())
-                                            self.ebvguess2 = float(user_ebvguess2.get())
                                             self.double_star = True
-                                            self.Tbound2lo = float(user_Tbound2lo.get())
-                                            self.Tbound2hi = float(user_Tbound2hi.get())
+
+                                            self.thetaguess1 = float(user_thetaguess1.get())
+                                            self.thetabound1lo = float(user_thetabound1lo.get())
+                                            self.thetabound1hi = float(user_thetabound1hi.get())
+                                            self.thetaguess2 = float(user_thetaguess2.get())
                                             self.thetabound2lo = float(user_thetabound2lo.get())
                                             self.thetabound2hi = float(user_thetabound2hi.get())
+
+                                            self.g1lowest = float(user_g1lowest.get())
+                                            self.g1highest = float(user_g1highest.get())
+                                            self.g1num = int(user_g1num.get())
+                                            self.T1lowest = float(user_T1lowest.get())
+                                            self.T1highest = float(user_T1highest.get())
+                                            self.T1num = int(user_T1num.get())
+                                            self.Z1lowest = float(user_Z1lowest.get())
+                                            self.Z1highest = float(user_Z1highest.get())
+                                            self.Z1num = int(user_Z1num.get())
+                                            self.ebv1lowest = float(user_ebv1lowest.get())
+                                            self.ebv1highest = float(user_ebv1highest.get())
+                                            self.ebv1num = int(user_ebv1num.get())
+                                            self.Tbound2lo = float(user_Tbound2lo.get())
+                                            self.Tbound2hi = float(user_Tbound2hi.get())
+                                            self.T2num = int(user_T2num.get())
                                             self.ebvbound2lo = float(user_ebvbound2lo.get())
                                             self.ebvbound2hi = float(user_ebvbound2hi.get())
+                                            self.ebv2num = int(user_ebv2num.get())
 
-                                            self.starlist2[0]=user_gguess1.get()
-                                            self.starlist2[1]=user_Tguess1.get()
-                                            self.starlist2[2]=user_Zguess1.get()
-                                            self.starlist2[3]=user_thetaguess1.get()
-                                            self.starlist2[4]=user_ebvguess1.get()
-                                            self.starlist2[5]=user_Tguess2.get()
-                                            self.starlist2[6]=user_thetaguess2.get()
-                                            self.starlist2[7]=user_ebvguess2.get()
-                                            self.stardict2[0][0] = user_gbound1lo.get()
-                                            self.stardict2[0][1] = user_gbound1hi.get()
-                                            self.stardict2[1][0] = user_Tbound1lo.get()
-                                            self.stardict2[1][1] = user_Tbound1hi.get()
-                                            self.stardict2[2][0] = user_Zbound1lo.get()
-                                            self.stardict2[2][1] = user_Zbound1hi.get()
-                                            self.stardict2[3][0] = user_thetabound1lo.get()
-                                            self.stardict2[3][1] = user_thetabound1hi.get()
-                                            self.stardict2[4][0] = user_ebvbound1lo.get()
-                                            self.stardict2[4][1] = user_ebvbound1hi.get()
-                                            self.stardict2[5][0] = user_Tbound2lo.get()
-                                            self.stardict2[5][1] = user_Tbound2hi.get()
-                                            self.stardict2[6][0] = user_thetabound2lo.get()
-                                            self.stardict2[6][1] = user_thetabound2hi.get()
-                                            self.stardict2[7][0] = user_ebvbound2lo.get()
-                                            self.stardict2[7][1] = user_ebvbound2hi.get()
-                                    except:
+                                            self.starlist2[0] = user_thetaguess1.get()
+                                            self.starlist2[1] = user_thetabound1lo.get()
+                                            self.starlist2[2] = user_thetabound1hi.get()
+                                            self.starlist2[3] = user_thetaguess2.get()
+                                            self.starlist2[4] = user_thetabound2lo.get()
+                                            self.starlist2[5] = user_thetabound2hi.get()
+                                            self.stardict2[0][0] = user_g1lowest.get()
+                                            self.stardict2[0][1] = user_g1highest.get()
+                                            self.stardict2[0][2] = user_g1num.get()
+                                            self.stardict2[1][0] = user_T1lowest.get()
+                                            self.stardict2[1][1] = user_T1highest.get()
+                                            self.stardict2[1][2] = user_T1num.get()
+                                            self.stardict2[2][0] = user_Z1lowest.get()
+                                            self.stardict2[2][1] = user_Z1highest.get()
+                                            self.stardict2[2][2] = user_Z1num.get()
+                                            self.stardict2[3][0] = user_ebv1lowest.get()
+                                            self.stardict2[3][1] = user_ebv1highest.get()
+                                            self.stardict2[3][2] = user_ebv1num.get()
+                                            self.stardict2[4][0] = user_Tbound2lo.get()
+                                            self.stardict2[4][1] = user_Tbound2hi.get()
+                                            self.stardict2[4][2] = user_T2num.get()
+                                            self.stardict2[5][0] = user_ebvbound2lo.get()
+                                            self.stardict2[5][1] = user_ebvbound2hi.get()
+                                            self.stardict2[5][2] = user_ebv2num.get()
+                                    except Exception as e:
                                             tk.messagebox.showinfo('Error', "One or more parameters seem to have been entered incorrectly. Please reenter the values and try again.")
+                                            print(e)
                                             return None
                                     else:
                                         mwin.destroy()
@@ -250,19 +271,6 @@ class ChiSquared():
             tk.messagebox.showinfo("Help","  •  Use csv row labelling (which should start at row 2)\n\n  •  Specify multiple rows with commas: 2,5,6\n\n  •  Specify a selection of rows with a colon: 3:8")
         whichbutton = tk.Button(mwin,text="?",font=("TimesNewRoman 8"),command = openrows)
         whichbutton.place(x=140,y=161)
-        user_radiusnumber = tk.StringVar()
-        user_radiusnumber.set(self.radiusnumberset)
-        enterradiusnumberpack = tk.Frame(mwin)
-        enterradiusnumberpack.place(x=37,y=265)
-        enterradiusnumber = tk.Entry(enterradiusnumberpack,textvariable=user_radiusnumber,width=15)
-        enterradiusnumber.pack(ipady=3)
-        labelwhat = tk.Label(mwin,text="Source distance (optional)",bg="alice blue")
-        labelwhat.place(x=35,y=235)
-        def openrows1():
-            from tkinter import messagebox
-            tk.messagebox.showinfo("Help","Converts the best-fit parameter theta_r into the source radius in solar radii, using the formula R_sol = theta_r * d_kpc * 3.0857e21 / 6.9598e10, where 3.0857e21 is the number of cm per kpc and 6.9598e10 is the sun's radius in cm. This requires an input of the source distance d_kpc in kiloparsecs.")
-        whatbutton = tk.Button(mwin,text="?",font=("TimesNewRoman 8"),command = openrows1)
-        whatbutton.place(x=140,y=266)
         labeltop = tk.Label(mwin,text="Input file: ", bg='white',border=2,relief=tk.RIDGE,padx=3,pady=1)
         labeltop.place(x=35,y=29)
         labelbot = tk.Label(mwin,text="e.g. \"filter_magnitudes.csv\"",bg="alice blue")
@@ -273,74 +281,64 @@ class ChiSquared():
         canvasline.place(x=-20,y=450)
         canvasline2 = canvasline = tk.Canvas(mwin,bd=3,relief=tk.GROOVE,width=680,height=1000,bg='lavender')
         canvasline2.place(x=660,y=110)
-        user_gguess1 = tk.DoubleVar()
-        user_Tguess1 = tk.DoubleVar()
-        user_Zguess1 = tk.DoubleVar()
-        user_thetaguess1 = tk.DoubleVar()
-        user_ebvguess1 = tk.DoubleVar()
+
         ystar1labels = 530
         ystar1entries = 560
         ycheckbutton = 480
-        labelg1 = tk.Label(mwin,text="log_g_hot",bg="mint cream").place(x=50,y=ystar1labels)
-        entryg1 = tk.Entry(mwin,textvariable=user_gguess1,width=10)
-        entryg1.place(x=50,y=ystar1entries)
-        labelT1 = tk.Label(mwin,text="T_hot/10000",bg="mint cream").place(x=170,y=ystar1labels)
-        entryT1 = tk.Entry(mwin,textvariable=user_Tguess1,width=10)
-        entryT1.place(x=170,y=ystar1entries)
-        labelZ1 = tk.Label(mwin,text="Z_hot",bg="mint cream").place(x=290,y=ystar1labels)
-        entryZ1 = tk.Entry(mwin,textvariable=user_Zguess1,width=10)
-        entryZ1.place(x=290,y=ystar1entries)
-        labeltheta1 = tk.Label(mwin,text="θ_r_hot/1e-12",bg="mint cream").place(x=410,y=ystar1labels)
-        entrytheta1 = tk.Entry(mwin,textvariable=user_thetaguess1,width=10)
-        entrytheta1.place(x=410,y=ystar1entries)
-        labelebv1 = tk.Label(mwin,text="E(B-V)_hot",bg="mint cream").place(x=530,y=ystar1labels)
-        entryebv1 = tk.Entry(mwin,textvariable=user_ebvguess1,width=10)
-        entryebv1.place(x=530,y=ystar1entries)
-
         ystar2labels = 610
         ystar2entries = 640
-        user_Tguess2 = tk.StringVar()
-        user_thetaguess2 = tk.StringVar()
-        user_ebvguess2 = tk.StringVar()
-        labelT2 = tk.Label(mwin,text="T_cool/10000",bg="mint cream").place(x=170,y=ystar2labels)
-        entryT2 = tk.Entry(mwin,textvariable=user_Tguess2,width=10)
-        entryT2.place(x=170,y=ystar2entries)
-        labeltheta2 = tk.Label(mwin,text="θ_r_cool/1e-12",bg="mint cream").place(x=410,y=ystar2labels)
-        entrytheta2 = tk.Entry(mwin,textvariable=user_thetaguess2,width=10)
-        entrytheta2.place(x=410,y=ystar2entries)
-        labelebv2 = tk.Label(mwin,text="E(B-V)_cool",bg="mint cream").place(x=530,y=ystar2labels)
-        entryebv2 = tk.Entry(mwin,textvariable=user_ebvguess2,width=10)
-        entryebv2.place(x=530,y=ystar2entries)
+        user_thetaguess1 = tk.DoubleVar()
+        user_thetabound1lo = tk.DoubleVar()
+        user_thetabound1hi = tk.DoubleVar()
+        user_thetaguess2 = tk.DoubleVar()
+        user_thetabound2lo = tk.DoubleVar()
+        user_thetabound2hi = tk.DoubleVar()
+
+        hotlabel = tk.Label(mwin,text="θ_r_hot/1e-12",bg="mint cream").place(x=50,y=ystar1labels+30)
+        coollabel = tk.Label(mwin,text="θ_r_cool/1e-12",bg="mint cream").place(x=50,y=ystar2labels+30)
+        guesslabel = tk.Label(mwin,text="Initial guess",font="Arial 10 underline",bg="mint cream").place(x=190,y=ystar1labels)
+        lowerboundlabel = tk.Label(mwin,text="Lower bound",font="Arial 10 underline",bg="mint cream").place(x=320,y=ystar1labels)
+        upperboundlabel = tk.Label(mwin,text="Upper bound",font="Arial 10 underline",bg="mint cream").place(x=450,y=ystar1labels)
+
+        entryguess1 = tk.Entry(mwin,textvariable=user_thetaguess1,width=12)
+        entryguess1.place(x=190,y=ystar1entries)
+        entrylowerbound1 = tk.Entry(mwin,textvariable=user_thetabound1lo,width=12)
+        entrylowerbound1.place(x=320,y=ystar1entries)
+        entryupperbound1 = tk.Entry(mwin,textvariable=user_thetabound1hi,width=12)
+        entryupperbound1.place(x=450,y=ystar1entries)
+
+        entryguess2 = tk.Entry(mwin,textvariable=user_thetaguess2,width=12)
+        entryguess2.place(x=190,y=ystar2entries)
+        entrylowerbound2 = tk.Entry(mwin,textvariable=user_thetabound2lo,width=12)
+        entrylowerbound2.place(x=320,y=ystar2entries)
+        entryupperbound2 = tk.Entry(mwin,textvariable=user_thetabound2hi,width=12)
+        entryupperbound2.place(x=450,y=ystar2entries)
         
         starno_chosen = tk.StringVar()
         checked=tk.IntVar()
         checked.set(self.checkedset)
 
         def enable(howmany):
-            entryg1['state'] = tk.NORMAL
-            entryT1['state'] = tk.NORMAL
-            entryZ1['state'] = tk.NORMAL
-            entrytheta1['state'] = tk.NORMAL
-            entryebv1['state'] = tk.NORMAL
+            entryguess1['state'] = tk.NORMAL
+            entrylowerbound1['state'] = tk.NORMAL
+            entryupperbound1['state'] = tk.NORMAL
             if howmany == "all":
-                entryT2['state'] = tk.NORMAL
-                entrytheta2['state'] = tk.NORMAL
-                entryebv2['state'] = tk.NORMAL
+                entryguess2['state'] = tk.NORMAL
+                entrylowerbound2['state'] = tk.NORMAL
+                entryupperbound2['state'] = tk.NORMAL
 
         def disable(howmany):
-            entryg1['state'] = tk.DISABLED
-            entryT1['state'] = tk.DISABLED
-            entryZ1['state'] = tk.DISABLED
-            entrytheta1['state'] = tk.DISABLED
-            entryebv1['state'] = tk.DISABLED
+            entryguess1['state'] = tk.DISABLED
+            entrylowerbound1['state'] = tk.DISABLED
+            entryupperbound1['state'] = tk.DISABLED
             if howmany == "all":
-                entryT2['state'] = tk.DISABLED
-                entrytheta2['state'] = tk.DISABLED
-                entryebv2['state'] = tk.DISABLED
+                entryguess2['state'] = tk.DISABLED
+                entrylowerbound2['state'] = tk.DISABLED
+                entryupperbound2['state'] = tk.DISABLED
 
 
         def stuff_vals():
-            entrylist = [entryg1,entryT1,entryZ1,entrytheta1,entryebv1,entryT2,entrytheta2,entryebv2]
+            entrylist = [entryguess1,entrylowerbound1,entryupperbound1,entryguess2,entrylowerbound2,entryupperbound2]
             if starno_chosen.get() == "     1-star fit     ":
                 enable("all")
                 for i,entry in enumerate(entrylist):
@@ -381,8 +379,8 @@ class ChiSquared():
         sliderstring = tk.StringVar()
         currentsliderval = tk.IntVar()
         currentsliderval.set(self.slidervalset)
-        fluxname = tk.StringVar()
-        chiname = tk.StringVar()
+        weightedmeanvarname = tk.StringVar()
+        gridname = tk.StringVar()
         imgname = tk.StringVar()
         sliderstring.set(self.sliderstringset)
         def changesliderstring(useless):
@@ -410,14 +408,14 @@ class ChiSquared():
                 buttentry2['state'] = tk.DISABLED
             elif buttentry2['state'] == tk.DISABLED:
                 buttentry2['state'] = tk.NORMAL
-                buttentry2.insert(tk.END,"flux_results.csv")
+                buttentry2.insert(tk.END,"weighted_meanvar.csv")
         def grent3():
             if buttentry3['state'] == tk.NORMAL:
                 buttentry3.delete(0,30)
                 buttentry3['state'] = tk.DISABLED
             elif buttentry3['state'] == tk.DISABLED:
                 buttentry3['state'] = tk.NORMAL
-                buttentry3.insert(tk.END,"chi_params.csv")
+                buttentry3.insert(tk.END,"params_grid.csv")
         def grent4():
             if buttentry4['state'] == tk.NORMAL:
                 buttentry4.delete(0,30)
@@ -433,11 +431,11 @@ class ChiSquared():
         grayframe.place(x=350,y=165)
         sliderlabel = tk.Label(grayframe,textvariable=sliderstring,padx=5,bg='white')
         sliderlabel.pack()
-        checkbutt2 = tk.Checkbutton(mwin,text="Save resulting flux data",variable=checker2,command=grent2,bg='azure2')
-        checkbutt3 = tk.Checkbutton(mwin,text="Save chi^2 and minimized parameters",variable=checker3,command=grent3,bg='azure2')
+        checkbutt2 = tk.Checkbutton(mwin,text="Save weighted mean and variance data",variable=checker2,command=grent2,bg='azure2')
+        checkbutt3 = tk.Checkbutton(mwin,text="Save parameter grids",variable=checker3,command=grent3,bg='azure2')
         checkbutt4 = tk.Checkbutton(mwin,text="Save plot images (1 per source X)",variable=checker4,command=grent4,bg='azure2')
-        buttentry2 = tk.Entry(mwin, textvariable = fluxname,width=26)
-        buttentry3 = tk.Entry(mwin, textvariable = chiname,width=26)
+        buttentry2 = tk.Entry(mwin, textvariable = weightedmeanvarname, width=26)
+        buttentry3 = tk.Entry(mwin, textvariable = gridname,width=26)
         buttentry4 = tk.Entry(mwin,textvariable = imgname,width=26)
         if checker2.get() == 0:
             buttentry2['state'] = tk.DISABLED
@@ -453,67 +451,78 @@ class ChiSquared():
         buttentry3.place(x=345,y=320)
         buttentry4.place(x=345,y=390)
 
-        user_gbound1lo = tk.DoubleVar()
-        user_gbound1hi = tk.DoubleVar()
-        user_Tbound1lo = tk.DoubleVar()
-        user_Tbound1hi = tk.DoubleVar()
-        user_Zbound1lo = tk.DoubleVar()
-        user_Zbound1hi = tk.DoubleVar()
-        user_thetabound1lo = tk.DoubleVar()
-        user_thetabound1hi = tk.DoubleVar()
-        user_ebvbound1lo = tk.DoubleVar()
-        user_ebvbound1hi = tk.DoubleVar()
-        xstarbentrieslo = 685
-        xstarbentrieshi = 915
-        lwbound = tk.Label(mwin,text="Lower bound",font="Arial 10 underline",bg="lavender").place(x=xstarbentrieslo-7,y=180)
-        upbound = tk.Label(mwin,text="Upper bound",font = "Arial 10 underline",bg="lavender").place(x=xstarbentrieshi-7,y=180)
-        labelg1 = tk.Label(mwin,text="log_g_hot",bg="lavender").place(x=xstarbentrieslo+122,y=230)
-        entrybg1lo = tk.Entry(mwin,textvariable=user_gbound1lo,width=10)
+        user_g1lowest = tk.DoubleVar()
+        user_g1highest = tk.DoubleVar()
+        user_g1num = tk.IntVar()
+        user_T1lowest = tk.DoubleVar()
+        user_T1highest = tk.DoubleVar()
+        user_T1num = tk.IntVar()
+        user_Z1lowest = tk.DoubleVar()
+        user_Z1highest = tk.DoubleVar()
+        user_Z1num = tk.IntVar()
+        user_ebv1lowest = tk.DoubleVar()
+        user_ebv1highest = tk.DoubleVar()
+        user_ebv1num = tk.IntVar()
+        xstarbentrieslo = 830
+        xstarbentrieshi = 950
+        xstarbentriesnum = 1070
+        def infopopup():
+            from tkinter import messagebox
+            tk.messagebox.showinfo("Help","Values are evenly spaced, starting from the lowest value and including the highest value.")
+        infobutton = tk.Button(mwin,text=" ? ",font=("TimesNewRoman 8"),command = infopopup)
+        infobutton.place(x=xstarbentriesnum+100,y=180)
+        lwbound = tk.Label(mwin,text="Lowest value",font="Arial 10 underline",bg="lavender").place(x=xstarbentrieslo-7,y=180)
+        upbound = tk.Label(mwin,text="Highest value",font = "Arial 10 underline",bg="lavender").place(x=xstarbentrieshi-7,y=180)
+        numberr = tk.Label(mwin,text="No. of values",font = "Arial 10 underline",bg="lavender").place(x=xstarbentriesnum-7,y=180)
+        labelg1 = tk.Label(mwin,text="log_g_hot",bg="lavender").place(x=xstarbentrieslo-130,y=230)
+        entrybg1lo = tk.Entry(mwin,textvariable=user_g1lowest,width=10)
         entrybg1lo.place(x=xstarbentrieslo,y=230)
-        entrybg1hi = tk.Entry(mwin,textvariable=user_gbound1hi,width=10)
+        entrybg1hi = tk.Entry(mwin,textvariable=user_g1highest,width=10)
         entrybg1hi.place(x=xstarbentrieshi,y=230)
-        labelbT1lo = tk.Label(mwin,text="T_hot/10000",bg="lavender").place(x=xstarbentrieslo+115,y=290)
-        entrybT1lo = tk.Entry(mwin,textvariable=user_Tbound1lo,width=10)
+        entrybg1num = tk.Entry(mwin,textvariable=user_g1num,width=10)
+        entrybg1num.place(x=xstarbentriesnum,y=230)
+        labelbT1 = tk.Label(mwin,text="T_hot/10000",bg="lavender").place(x=xstarbentrieslo-130,y=290)
+        entrybT1lo = tk.Entry(mwin,textvariable=user_T1lowest,width=10)
         entrybT1lo.place(x=xstarbentrieslo,y=290)
-        entrybT1hi = tk.Entry(mwin,textvariable=user_Tbound1hi,width=10)
+        entrybT1hi = tk.Entry(mwin,textvariable=user_T1highest,width=10)
         entrybT1hi.place(x=xstarbentrieshi,y=290)
-        labelbZlo = tk.Label(mwin,text="Z_hot",bg="lavender").place(x=xstarbentrieslo+135,y=350)
-        entrybZ1lo = tk.Entry(mwin,textvariable=user_Zbound1lo,width=10)
+        entrybT1num = tk.Entry(mwin,textvariable=user_T1num,width=10)
+        entrybT1num.place(x=xstarbentriesnum,y=290)
+        labelbZ = tk.Label(mwin,text="Z_hot",bg="lavender").place(x=xstarbentrieslo-130,y=350)
+        entrybZ1lo = tk.Entry(mwin,textvariable=user_Z1lowest,width=10)
         entrybZ1lo.place(x=xstarbentrieslo,y=350)
-        entrybZ1hi = tk.Entry(mwin,textvariable=user_Zbound1hi,width=10)
+        entrybZ1hi = tk.Entry(mwin,textvariable=user_Z1highest,width=10)
         entrybZ1hi.place(x=xstarbentrieshi,y=350)
-        labelbtheta1lo = tk.Label(mwin,text="θ_r_hot/1e-12",bg="lavender").place(x=xstarbentrieslo+110,y=410)
-        entrybtheta1lo = tk.Entry(mwin,textvariable=user_thetabound1lo,width=10)
-        entrybtheta1lo.place(x=xstarbentrieslo,y=410)
-        entrybtheta1hi = tk.Entry(mwin,textvariable=user_thetabound1hi,width=10)
-        entrybtheta1hi.place(x=xstarbentrieshi,y=410)
-        labelbebv1lo = tk.Label(mwin,text="E(B-V)_hot",bg="lavender").place(x=xstarbentrieslo+120,y=470)
-        entrybebv1lo = tk.Entry(mwin,textvariable=user_ebvbound1lo,width=10)
-        entrybebv1lo.place(x=xstarbentrieslo,y=470)
-        entrybebv1hi = tk.Entry(mwin,textvariable=user_ebvbound1hi,width=10)
-        entrybebv1hi.place(x=xstarbentrieshi,y=470)
+        entrybZ1num = tk.Entry(mwin,textvariable=user_Z1num,width=10)
+        entrybZ1num.place(x=xstarbentriesnum,y=350)
+        labelbebv1 = tk.Label(mwin,text="E(B-V)_hot",bg="lavender").place(x=xstarbentrieslo-130,y=410)
+        entrybebv1lo = tk.Entry(mwin,textvariable=user_ebv1lowest,width=10)
+        entrybebv1lo.place(x=xstarbentrieslo,y=410)
+        entrybebv1hi = tk.Entry(mwin,textvariable=user_ebv1highest,width=10)
+        entrybebv1hi.place(x=xstarbentrieshi,y=410)
+        entrybebv1num = tk.Entry(mwin,textvariable=user_ebv1num,width=10)
+        entrybebv1num.place(x=xstarbentriesnum,y=410)
 
         user_Tbound2lo = tk.StringVar()
         user_Tbound2hi = tk.StringVar()
-        user_thetabound2lo = tk.StringVar()
-        user_thetabound2hi = tk.StringVar()
+        user_T2num = tk.StringVar()
         user_ebvbound2lo = tk.StringVar()
         user_ebvbound2hi = tk.StringVar()
-        labelbT2lo = tk.Label(mwin,text="T_cool/10000",bg="lavender").place(x=xstarbentrieslo+110,y=530)
+        user_ebv2num = tk.IntVar()
+        labelbT2lo = tk.Label(mwin,text="T_cool/10000",bg="lavender").place(x=xstarbentrieslo-130,y=470)
         entrybT2lo = tk.Entry(mwin,textvariable=user_Tbound2lo,width=10)
-        entrybT2lo.place(x=xstarbentrieslo,y=530)
+        entrybT2lo.place(x=xstarbentrieslo,y=470)
         entrybT2hi = tk.Entry(mwin,textvariable=user_Tbound2hi,width=10)
-        entrybT2hi.place(x=xstarbentrieshi,y=530)
-        labelbtheta2lo = tk.Label(mwin,text="θ_r_cool/1e-12",bg="lavender").place(x=xstarbentrieslo+105,y=590)
-        entrybtheta2lo = tk.Entry(mwin,textvariable=user_thetabound2lo,width=10)
-        entrybtheta2lo.place(x=xstarbentrieslo,y=590)
-        entrybtheta2hi = tk.Entry(mwin,textvariable=user_thetabound2hi,width=10)
-        entrybtheta2hi.place(x=xstarbentrieshi,y=590)
-        labelbebv2lo = tk.Label(mwin,text="E(B-V)_cool",bg="lavender").place(x=xstarbentrieslo+120,y=650)
+        entrybT2hi.place(x=xstarbentrieshi,y=470)
+        entrybT2num = tk.Entry(mwin,textvariable=user_T2num,width=10)
+        entrybT2num.place(x=xstarbentriesnum,y=470)
+        labelbebv2lo = tk.Label(mwin,text="E(B-V)_cool",bg="lavender").place(x=xstarbentrieslo-130,y=530)
         entrybebv2lo = tk.Entry(mwin,textvariable=user_ebvbound2lo,width=10)
-        entrybebv2lo.place(x=xstarbentrieslo,y=650)
+        entrybebv2lo.place(x=xstarbentrieslo,y=530)
         entrybebv2hi = tk.Entry(mwin,textvariable=user_ebvbound2hi,width=10)
-        entrybebv2hi.place(x=xstarbentrieshi,y=650)
+        entrybebv2hi.place(x=xstarbentrieshi,y=530)
+        entrybebv2num = tk.Entry(mwin,textvariable=user_ebv2num,width=10)
+        entrybebv2num.place(x=xstarbentriesnum,y=530)
         
         checked2=tk.IntVar()
         checked2.set(self.checked2set)
@@ -521,61 +530,65 @@ class ChiSquared():
         def enable2(howmany):
             entrybg1lo['state'] = tk.NORMAL
             entrybg1hi['state'] = tk.NORMAL
+            entrybg1num['state'] = tk.NORMAL
             entrybT1lo['state'] = tk.NORMAL
             entrybT1hi['state'] = tk.NORMAL
+            entrybT1num['state'] = tk.NORMAL
             entrybZ1lo['state'] = tk.NORMAL
             entrybZ1hi['state'] = tk.NORMAL
-            entrybtheta1lo['state'] = tk.NORMAL
-            entrybtheta1hi['state'] = tk.NORMAL
+            entrybZ1num['state'] = tk.NORMAL
             entrybebv1lo['state'] = tk.NORMAL
             entrybebv1hi['state'] = tk.NORMAL
+            entrybebv1num['state'] = tk.NORMAL
             if howmany == "all":
                 entrybT2lo['state'] = tk.NORMAL
                 entrybT2hi['state'] = tk.NORMAL
-                entrybtheta2lo['state'] = tk.NORMAL
-                entrybtheta2hi['state'] = tk.NORMAL
+                entrybT2num['state'] = tk.NORMAL
                 entrybebv2lo['state'] = tk.NORMAL
                 entrybebv2hi['state'] = tk.NORMAL
+                entrybebv2num['state'] = tk.NORMAL
 
         def disable2(howmany):
             entrybg1lo['state'] = tk.DISABLED
             entrybg1hi['state'] = tk.DISABLED
+            entrybg1num['state'] = tk.DISABLED
             entrybT1lo['state'] = tk.DISABLED
             entrybT1hi['state'] = tk.DISABLED
+            entrybT1num['state'] = tk.DISABLED
             entrybZ1lo['state'] = tk.DISABLED
             entrybZ1hi['state'] = tk.DISABLED
-            entrybtheta1lo['state'] = tk.DISABLED
-            entrybtheta1hi['state'] = tk.DISABLED
+            entrybZ1num['state'] = tk.DISABLED
             entrybebv1lo['state'] = tk.DISABLED
             entrybebv1hi['state'] = tk.DISABLED
+            entrybebv1num['state'] = tk.DISABLED
             if howmany == "all":
                 entrybT2lo['state'] = tk.DISABLED
                 entrybT2hi['state'] = tk.DISABLED
-                entrybtheta2lo['state'] = tk.DISABLED
-                entrybtheta2hi['state'] = tk.DISABLED
+                entrybT2num['state'] = tk.DISABLED
                 entrybebv2lo['state'] = tk.DISABLED
                 entrybebv2hi['state'] = tk.DISABLED
+                entrybebv2num['state'] = tk.DISABLED
 
 
         def stuff_vals2():
-            entrybdict = {entrybg1lo:entrybg1hi,entrybT1lo:entrybT1hi,entrybZ1lo:entrybZ1hi,entrybtheta1lo:entrybtheta1hi,entrybebv1lo:entrybebv1hi,entrybT2lo:entrybT2hi,entrybtheta2lo:entrybtheta2hi,entrybebv2lo:entrybebv2hi}
+            entrybdict = [[entrybg1lo,entrybg1hi,entrybg1num],[entrybT1lo,entrybT1hi,entrybT1num],[entrybZ1lo,entrybZ1hi,entrybZ1num],[entrybebv1lo,entrybebv1hi,entrybebv1num],[entrybT2lo,entrybT2hi,entrybT2num],[entrybebv2lo,entrybebv2hi,entrybebv2num]]
             if starno_chosen.get() == "     1-star fit     ":
                 enable2("all")
-                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),self.stardict1):
-                    entryleft.delete(0,20)
-                    entryleft.insert(0,"{}".format(key))
-                    entryright.delete(0,20)
-                    entryright.insert(0,"{}".format(val))
+                for i in range(6):
+                    for j in range(3):
+                        entry = entrybdict[i][j]
+                        entry.delete(0,20)
+                        entry.insert(0,"{}".format(self.stardict1[i][j]))
                 disable2("all")
                 if checked2.get() == 1:
                     enable2("some")
             elif starno_chosen.get() == "     2-star fit     ":
                 enable2("all")
-                for (entryleft,entryright),(key,val) in zip(entrybdict.items(),self.stardict2):
-                    entryleft.delete(0,20)
-                    entryleft.insert(0,"{}".format(key))
-                    entryright.delete(0,20)
-                    entryright.insert(0,"{}".format(val))
+                for i in range(6):
+                    for j in range(3):
+                        entry = entrybdict[i][j]
+                        entry.delete(0,20)
+                        entry.insert(0,"{}".format(self.stardict2[i][j]))
                 disable2("all")
                 if checked2.get() == 1:
                     enable2("all")
@@ -587,14 +600,14 @@ class ChiSquared():
 
         def gray():
             if starno_chosen.get() == "     1-star fit     ":
-                if entryg1['state'] == tk.NORMAL:
+                if entryguess1['state'] == tk.NORMAL:
                     disable("some")
-                elif entryg1['state'] == tk.DISABLED:
+                elif entryguess1['state'] == tk.DISABLED:
                     enable("some")
             elif starno_chosen.get() == "     2-star fit     ":
-                if entryg1['state'] == tk.NORMAL:
+                if entryguess1['state'] == tk.NORMAL:
                     disable("all")
-                elif entryg1['state'] == tk.DISABLED:
+                elif entryguess1['state'] == tk.DISABLED:
                     enable("all")
         
         def gray2():
@@ -620,9 +633,9 @@ class ChiSquared():
         grent3()
         grent4()
         grent4()
-        checkbutton = tk.Checkbutton(mwin,text="Edit default guess (parameter vector)",variable=checked,command=gray,bg="mint cream")
+        checkbutton = tk.Checkbutton(mwin,text="Edit guess and bounds for theta_r",variable=checked,command=gray,bg="mint cream")
         checkbutton.place(x=10,y=ycheckbutton)
-        checkbutton2 = tk.Checkbutton(mwin,text="Edit optimization bounds",variable=checked2,command=gray2,bg="lavender")
+        checkbutton2 = tk.Checkbutton(mwin,text="Edit parameters grid",variable=checked2,command=gray2,bg="lavender")
         checkbutton2.place(x=680,y=130)
         disable("all")
         disable2("all")
@@ -708,7 +721,30 @@ class ChiSquared():
                     self.ab_magnitudes_frame.iloc[rowind,colind] = self.ab_magnitudes_frame.iloc[rowind,colind-1]*self.ab_magnitudes_frame.iloc[rowind,colind]/1.0857
                 self.bandfluxerrors["{}".format(col)] = self.ab_magnitudes_frame[col]
         
+    def buildGrid(self):
+        import numpy as np
 
+        if self.single_star == True:
+            g1vals = np.linspace(self.g1lowest,self.g1highest,self.g1num)
+            T1vals = np.linspace(self.T1lowest,self.T1highest,self.T1num)
+            Z1vals = np.linspace(self.Z1lowest,self.Z1highest,self.Z1num)
+            ebv1vals = np.linspace(self.ebv1lowest,self.ebv1highest,self.ebv1num)
+
+            self.g1grid,self.T1grid,self.Z1grid,self.ebv1grid = np.meshgrid(g1vals,T1vals,Z1vals,ebv1vals,indexing='ij')
+            print("g1grid ",self.g1grid)
+            print("T1grid ",self.T1grid)
+            print("Z1grid ",self.Z1grid)
+            print("ebv1grid ",self.ebv1grid)
+
+        elif self.double_star == True:
+            g1vals = np.linspace(self.g1lowest,self.g1highest,self.g1num)
+            T1vals = np.linspace(self.T1lowest,self.T1highest,self.T1num)
+            Z1vals = np.linspace(self.Z1lowest,self.Z1highest,self.Z1num)
+            ebv1vals = np.linspace(self.ebv1lowest,self.ebv1highest,self.ebv1num)
+            T2vals = np.linspace(self.Tbound2lo,self.Tbound2hi,self.T2num)
+            ebv2vals = np.linspace(self.ebvbound2lo,self.ebvbound2hi,self.ebv2num)
+
+            self.g1grid,self.T1grid,self.Z1grid,self.ebv1grid,self.T2grid,self.ebv2grid = np.meshgrid(g1vals,T1vals,Z1vals,ebv1vals,T2vals,ebv2vals,indexing='ij')
 
     def prepare_for_interpolation(self):
         import xarray as xr
@@ -729,43 +765,98 @@ class ChiSquared():
             extinctlist.append(self.allextinct[valid_filter])
         return extinctlist
 
-    def minichisqfunc_single(self,tup,valid_filters_this_row):
-        g, T, Z, theta_r_sq, E_bv = tup
-      
-        best_models = []
-        interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
+    def minichisqfunc_single(self,theta_r1_sq,g1,T1,Z1,ebv1,valid_filters_this_row,curr_row):
+
+        mean_models = []
+        interpolist = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
         extinctolist = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            best_models.append(interpolist[i]*(theta_r_sq*1e-24)*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
-        
-        return best_models
+            mean_models.append(interpolist[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist[i]+3.001))))
 
-    def minichisqfunc_double(self,tup,valid_filters_this_row):
-        g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2 = tup
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - mean_models[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        mean_chi2 = sum(summands)
+        print("weighted mean chi2: ",mean_chi2,"\n")
+
+        return mean_chi2, mean_models
+
+    def minichisqfunc2_single(self,theta_r1_sq,g1,T1,Z1,ebv1,valid_filters_this_row,curr_row):
+        print("New optimization: Testing row {} with g1, T1, Z1, theta_r1_sq, ebv1: ".format(self.rows[curr_row]+2), g1,T1,Z1,theta_r1_sq,ebv1)
+
+        mean_models = []
+        interpolist = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
+        extinctolist = self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            mean_models.append(interpolist[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist[i]+3.001))))
+
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - mean_models[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        new_chi2 = sum(summands)
+        print("new chi2 ", new_chi2)
+
+        return new_chi2
+
+    def minichisqfunc_double(self,theta_r1_sq,theta_r2_sq,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
       
-        bestmodels1 = []
+        mean_models1 = []
         interpolist1 = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
         extinctolist1 =self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            bestmodels1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
-        bestmodels2 = []
+            mean_models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist1[i]+3.001))))
+        mean_models2 = []
         interpolist2 = self.interpolate(2.5,10000*T2,-1.5,valid_filters_this_row)
         extinctolist2 = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            bestmodels2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
+            mean_models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(ebv2*(extinctolist2[i]+3.001))))
+
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - mean_models1[i] - mean_models2[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        mean_chisq = sum(summands)
+        print("mean chisq: ",mean_chisq,"\n")
         
-        return bestmodels1,bestmodels2
+        return mean_chisq, mean_models1, mean_models2
+
+    def minichisqfunc2_double(self,tup,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
+        
+        theta_r1_sq,theta_r2_sq = tup
+        
+        print("New optimization: Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1_sq, ebv1, T2, theta_r2_sq, ebv2)
+
+        mean_models1 = []
+        interpolist1 = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
+        extinctolist1 =self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            mean_models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist1[i]+3.001))))
+        mean_models2 = []
+        interpolist2 = self.interpolate(2.5,10000*T2,-1.5,valid_filters_this_row)
+        extinctolist2 = self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            mean_models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(ebv2*(extinctolist2[i]+3.001))))
+
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - mean_models1[i] - mean_models2[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        new_chi2 = sum(summands)
+        print("new chisq: ",new_chi2,"\n")
+        
+        return new_chi2
 
 
-    def chisqfunc(self,tup,valid_filters_this_row,curr_row):
-        g, T, Z, theta_r_sq, E_bv = tup
-        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1: ".format(self.rows[curr_row]+2), g,T,Z,theta_r_sq,E_bv)
+    def chisqfunc(self,theta_r1_sq,g1,T1,Z1,ebv1,valid_filters_this_row,curr_row):
+        print("Testing row {} with g1, T1, Z1, theta_r1_sq, ebv1: ".format(self.rows[curr_row]+2), g1,T1,Z1,theta_r1_sq,ebv1)
 
         models = []
-        interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
+        interpolist = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
         extinctolist = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models.append(interpolist[i]*(theta_r_sq*1e-24)*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
+            models.append(interpolist[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist[i]+3.001))))
 
         summands = []
         for i,valid_ind in enumerate(valid_filters_this_row):
@@ -776,20 +867,20 @@ class ChiSquared():
 
         return chisq
 
-    def chisqfunc2(self,tup,valid_filters_this_row,curr_row):
-        g1,T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2 = tup
-        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2)
+    def chisqfunc2(self,tup,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
+        theta_r1_sq,theta_r2_sq = tup
+        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1_sq, ebv1, T2, theta_r2_sq, ebv2)
 
         models1 = []
         interpolist1 = self.interpolate(g1,T1*10000,Z1,valid_filters_this_row)
         extinctolist1 =self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
+            models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(ebv1*(extinctolist1[i]+3.001))))
         models2 = []
         interpolist2 = self.interpolate(2.5,T2*10000,-1.5,valid_filters_this_row)
         extinctolist2 = self.extinction(valid_filters_this_row)
         for i in range(len(valid_filters_this_row)):
-            models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
+            models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(ebv2*(extinctolist2[i]+3.001))))
 
         summands = []
         for i,valid_ind in enumerate(valid_filters_this_row):
@@ -797,506 +888,516 @@ class ChiSquared():
 
         chisq = sum(summands)
         print("chisq: ",chisq,"\n")
-        return chisq
-
-    def chisqfunc2torch(self,tup,t_valid_filters_this_row,t_curr_row):
-        g1 = tup[0]
-        T1 = tup[1]
-        Z1 = tup[2]
-        theta_r1_sq = tup[3]
-        E_bv1 = tup[4]
-        T2 = tup[5]
-        theta_r2_sq = tup[6]
-        E_bv2 = tup[7]
-        
-        valid_filters_this_row = [int(i) for i in t_valid_filters_this_row]
-        if not isinstance(t_curr_row,int):
-            curr_row = t_curr_row.long().item()
-        else:
-            curr_row = t_curr_row
-
-        print("Testing row {} with g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, theta_r1_sq, E_bv1, T2, theta_r2_sq, E_bv2)
-
-        models1 = []
-        interpolist1 = self.interpolate(g1.item(),T1.item()*10000,Z1.item(),valid_filters_this_row)
-        extinctolist1 =self.extinction(valid_filters_this_row)
-        for i in range(len(valid_filters_this_row)):
-            models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
-        models2 = []
-        interpolist2 = self.interpolate(2.5,T2.item()*10000,-1.5,valid_filters_this_row)
-        extinctolist2 = self.extinction(valid_filters_this_row)
-        for i in range(len(valid_filters_this_row)):
-            models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
-
-        summands = []
-        for i,valid_ind in enumerate(valid_filters_this_row):
-            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - models1[i] - models2[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
-
-        chisq = sum(summands)
-        print("chisq: ",chisq,"\n")
-        return chisq
-
-    def chisqfuncerror(self,lead,leadsign,otherstup):
-
-        if leadsign == 0:
-            g = lead
-            T,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5]
-        elif leadsign == 1:
-            T = lead
-            g,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5]
-        elif leadsign == 2:
-            Z = lead
-            g,T,theta_r_sq,E_bv,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5]
-        elif leadsign == 3:
-            theta_r_sq = lead
-            g,T,Z,E_bv,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5]
-        elif leadsign == 4:
-            E_bv = lead
-            g,T,Z,theta_r_sq,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5]
-
-        models = []
-        interpolist = self.interpolate(g,10000*T,Z,valid_filters_this_row)
-        extinctolist = self.extinction(valid_filters_this_row)
-        for i in range(len(valid_filters_this_row)):
-            models.append(interpolist[i]*(theta_r_sq*1e-24)*10**(-0.4*(E_bv*(extinctolist[i]+3.001))))
-
-        summands = []
-        for i,valid_ind in enumerate(valid_filters_this_row):
-            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - models[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
-
-        chisq = sum(summands)-self.results[curr_row].fun-4.72
-
-        return chisq
-
-    def chisqfunc2error(self,lead,leadsign,otherstup):
-
-        if leadsign == 0:
-            g1 = lead
-            T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 1:
-            T1 = lead
-            g1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 2:
-            Z1 = lead
-            g1,T1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 3:
-            theta_r1_sq = lead
-            g1,T1,Z1,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 4:
-            E_bv1 = lead
-            g1,T1,Z1,theta_r1_sq,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 5:
-            T2 = lead
-            g1,T1,Z1,theta_r1_sq,E_bv1,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 6:
-            theta_r2_sq = lead
-            g1,T1,Z1,theta_r1_sq,E_bv1,T2,E_bv2,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-        elif leadsign == 7:
-            E_bv2 = lead
-            g1,T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,valid_filters_this_row,curr_row = otherstup[0],otherstup[1],otherstup[2],otherstup[3],otherstup[4],otherstup[5],otherstup[6],otherstup[7],otherstup[8]
-
-        models1 = []
-        interpolist1 = self.interpolate(g1,T1*10000,Z1,valid_filters_this_row)
-        extinctolist1 =self.extinction(valid_filters_this_row)
-        for i in range(len(valid_filters_this_row)):
-            models1.append(interpolist1[i]*(theta_r1_sq*1e-24)*10**(-0.4*(E_bv1*(extinctolist1[i]+3.001))))
-        models2 = []
-        interpolist2 = self.interpolate(2.5,T2*10000,-1.5,valid_filters_this_row)
-        extinctolist2 = self.extinction(valid_filters_this_row)
-        for i in range(len(valid_filters_this_row)):
-            models2.append(interpolist2[i]*(theta_r2_sq*1e-24)*10**(-0.4*(E_bv2*(extinctolist2[i]+3.001))))
-
-        summands = []
-        for i,valid_ind in enumerate(valid_filters_this_row):
-            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - models1[i] - models2[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
-
-        chisq = sum(summands)-self.results[curr_row].fun-9.28
         return chisq
 
     def minimize_chisq(self):
         import numpy as np
-        
+        from math import exp, sqrt
+        from scipy.optimize import Bounds
+
         if self.single_star == True:
             #default guess: 4.5, 3.2, 0, 0.7368, 0.33
             #bnds = ((3.5,5),(.35,3.1),(-2.5,.5),(0.03,30),(0,1))
-            bnds = ((self.gbound1lo,self.gbound1hi),(self.Tbound1lo,self.Tbound1hi),(self.Zbound1lo,self.Zbound1hi),(self.thetabound1lo,self.thetabound1hi),(self.ebvbound1lo,self.ebvbound1hi))
-            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1**2,self.ebvguess1])
-            self.results = []
 
+            bnds = Bounds([self.thetabound1lo],[self.thetabound1hi])
+            x0 = np.array([self.thetaguess1*self.thetaguess1])
+            self.results = []
+            self.mean_g1s = []
+            self.mean_T1s = []
+            self.mean_Z1s = []
+            self.mean_theta_r1s = []
+            self.mean_ebv1s = []
+            
+            self.var_g1s = []
+            self.var_T1s = []
+            self.var_Z1s = []
+            self.var_theta_r1s = []
+            self.var_ebv1s = []
+
+            self.gridThetars = []
+            self.gridChisqs = []
+
+            self.smallest_chi2s = []
+            self.smallest_chi2_params = []
+
+            self.newtheta_r1s = []
+            self.newchi2s = []
+            
             for curr_row in range(self.bandfluxes.shape[0]): 
                 valid_filters_this_row = []
                 for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
                     if np.isnan(bandflux) == False:
                         valid_filters_this_row.append(valid_ind)
-                self.results.append(opt.minimize(self.chisqfunc, x0, args=(valid_filters_this_row,curr_row,), bounds=bnds))
-            print("results:\n",self.results)
+                gridChisq = np.zeros((self.g1num,self.T1num,self.Z1num,self.ebv1num))
+                gridThetar = np.zeros((self.g1num,self.T1num,self.Z1num,self.ebv1num))
+                Wtot = 0
+                smallest_chi2 = 1e14
+                smallest_chi2_params = np.zeros(5)
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num):
+                                g1 = self.g1grid[i,j,k,l]
+                                T1 = self.T1grid[i,j,k,l]
+                                Z1 = self.Z1grid[i,j,k,l]
+                                ebv1 = self.ebv1grid[i,j,k,l]
+                                res = opt.minimize(self.chisqfunc, x0, args=(g1,T1,Z1,ebv1,valid_filters_this_row,curr_row,), bounds=bnds)
+                                chi2 = res.fun
+                                theta_r1 = sqrt(res.x[0])
+                                gridChisq[i,j,k,l] = chi2
+                                print("optimized chi2: ",chi2)
+                                gridThetar[i,j,k,l] = theta_r1
+                                print("optimized theta_r1/1e-12: ",theta_r1)
+                                print("\n")
+                                if chi2 < smallest_chi2:
+                                    smallest_chi2 = chi2
+                                    smallest_chi2_params[0] = g1
+                                    smallest_chi2_params[1] = T1
+                                    smallest_chi2_params[2] = Z1
+                                    smallest_chi2_params[3] = theta_r1
+                                    smallest_chi2_params[4] = ebv1
+
+                self.smallest_chi2s.append(0)
+                self.smallest_chi2s[curr_row] = smallest_chi2
+                print("Smallest chi2 for row {}: {}".format(self.rows[curr_row]+2,smallest_chi2))
+                self.smallest_chi2_params.append(0)
+                self.smallest_chi2_params[curr_row] = smallest_chi2_params
+                print("Associated parameter values: g1 {}, T1 {}, Z1 {}, theta_r1 {}, ebv1 {}".format(smallest_chi2_params[0],smallest_chi2_params[1],smallest_chi2_params[2],smallest_chi2_params[3],smallest_chi2_params[4]))
+                gridChisq -= smallest_chi2
+                self.mean_g1s.append(0)
+                self.mean_T1s.append(0)
+                self.mean_Z1s.append(0)
+                self.mean_theta_r1s.append(0)
+                self.mean_ebv1s.append(0)
+                
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num): 
+                                g1 = self.g1grid[i,j,k,l]
+                                T1 = self.T1grid[i,j,k,l]
+                                Z1 = self.Z1grid[i,j,k,l]
+                                theta_r1 = gridThetar[i,j,k,l]
+                                ebv1 = self.ebv1grid[i,j,k,l]
+                                chi2 = gridChisq[i,j,k,l]
+
+                                Wtot += exp(-chi2/2)
+                                self.mean_g1s[curr_row] += exp(-chi2/2)*g1
+                                self.mean_T1s[curr_row] += exp(-chi2/2)*T1
+                                self.mean_Z1s[curr_row] += exp(-chi2/2)*Z1
+                                self.mean_theta_r1s[curr_row] += exp(-chi2/2)*theta_r1
+                                self.mean_ebv1s[curr_row] += exp(-chi2/2)*ebv1
+                                
+                self.mean_g1s[curr_row] /= Wtot
+                self.mean_T1s[curr_row] /= Wtot
+                self.mean_Z1s[curr_row] /= Wtot
+                self.mean_theta_r1s[curr_row] /= Wtot
+                self.mean_ebv1s[curr_row] /= Wtot
+
+                print("weighted mean g1 ", self.mean_g1s[curr_row])
+                print("weighted mean T1 ", self.mean_T1s[curr_row])
+                print("weighted mean Z1 ", self.mean_Z1s[curr_row])
+                print("weighted mean theta r1 ", self.mean_theta_r1s[curr_row])
+                print("weighted mean ebv1 ", self.mean_ebv1s[curr_row])
+
+                self.var_g1s.append(0)
+                self.var_T1s.append(0)
+                self.var_Z1s.append(0)
+                self.var_theta_r1s.append(0)
+                self.var_ebv1s.append(0)
+
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num):
+                                g1 = self.g1grid[i,j,k,l]
+                                T1 = self.T1grid[i,j,k,l]
+                                Z1 = self.Z1grid[i,j,k,l]
+                                theta_r1 = gridThetar[i,j,k,l]
+                                ebv1 = self.ebv1grid[i,j,k,l]
+                                chi2 = gridChisq[i,j,k,l]
+
+                                self.var_g1s[curr_row] += exp(-chi2/2)*(g1-self.mean_g1s[curr_row])*(g1-self.mean_g1s[curr_row])
+                                self.var_T1s[curr_row] += exp(-chi2/2)*(T1-self.mean_T1s[curr_row])*(T1-self.mean_T1s[curr_row])
+                                self.var_Z1s[curr_row] += exp(-chi2/2)*(Z1-self.mean_Z1s[curr_row])*(Z1-self.mean_Z1s[curr_row])
+                                self.var_theta_r1s[curr_row] += exp(-chi2/2)*(theta_r1-self.mean_theta_r1s[curr_row])*(theta_r1-self.mean_theta_r1s[curr_row])
+                                self.var_ebv1s[curr_row] += exp(-chi2/2)*(ebv1-self.mean_ebv1s[curr_row])*(ebv1-self.mean_ebv1s[curr_row])
+                                
+                gridChisq += smallest_chi2
+                self.gridThetars.append(gridThetar.flatten())
+                self.gridChisqs.append(gridChisq.flatten())
+                                
+                self.var_g1s[curr_row] /= Wtot
+                self.var_Z1s[curr_row] /= Wtot
+                self.var_T1s[curr_row] /= Wtot
+                self.var_theta_r1s[curr_row] /= Wtot
+                self.var_ebv1s[curr_row] /= Wtot
+
+                print("weighted var g1 ", self.var_g1s[curr_row])
+                print("weighted var T1 ", self.var_T1s[curr_row])
+                print("weighted var Z1 ", self.var_Z1s[curr_row])
+                print("weighted var theta r1 ", self.var_theta_r1s[curr_row])
+                print("weighted var ebv1 ", self.var_ebv1s[curr_row])
+
+                x02 = np.array([self.mean_theta_r1s[curr_row]*self.mean_theta_r1s[curr_row]])
+                res2 = opt.minimize(self.minichisqfunc2_single, x02, args=(self.mean_g1s[curr_row],self.mean_T1s[curr_row],self.mean_Z1s[curr_row],self.mean_ebv1s[curr_row],valid_filters_this_row,curr_row,), bounds=bnds)
+
+                newchi2 = res2.fun
+                newtheta_r1 = sqrt(res2.x[0])
+
+                print("new chi2: ", newchi2)
+                print("new theta_r1: ", newtheta_r1)
+
+                self.newchi2s.append(newchi2)
+                self.newtheta_r1s.append(newtheta_r1)
+                
+                #print("results:\n",self.results)
         
         elif self.double_star == True:
-            #import torch
-            #from torch.autograd.functional import jacobian,hessian
-
-            #default guess: 4.5, 1.2, -1.0, 0.088417, 0.15, 0.375, 2.947242, 0.15 
-            #bnds = ((3.5,5),(.65,3.1),(-2.5,.5),(0.03,30),(0,1),(.35,.55),(.03,30),(0,1))
-            bnds = ((self.gbound1lo,self.gbound1hi),(self.Tbound1lo,self.Tbound1hi),(self.Zbound1lo,self.Zbound1hi),(self.thetabound1lo,self.thetabound1hi),(self.ebvbound1lo,self.ebvbound1hi),(self.Tbound2lo,self.Tbound2hi),(self.thetabound2lo,self.thetabound2hi),(self.ebvbound2lo,self.ebvbound2hi))
-            x0 = np.array([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1**2,self.ebvguess1,self.Tguess2,self.thetaguess2**2,self.ebvguess2])
-            #x0 = torch.tensor([self.gguess1,self.Tguess1,self.Zguess1,self.thetaguess1**2,self.ebvguess1,self.Tguess2,self.thetaguess2**2,self.ebvguess2])
-            self.results = []
-
-            '''def jacofunc(x0,valid_filters_this_row,curr_row):
-                t_x0 = torch.from_numpy(x0)
-                t_valid_filters_this_row = torch.tensor([float(i) for i in valid_filters_this_row])
-                t_curr_row = torch.tensor(float(curr_row))
-                return jacobian(self.chisqfunc2torch,(t_x0,t_valid_filters_this_row,t_curr_row))[0]
             
-            def hessfunc(x0,valid_filters_this_row,curr_row):
-                t_x0 = torch.from_numpy(x0)
-                t_valid_filters_this_row = torch.tensor([float(i) for i in valid_filters_this_row])
-                t_curr_row = torch.tensor(float(curr_row))
-                return hessian(self.chisqfunc2torch,(t_x0,t_valid_filters_this_row,t_curr_row))[0][0]'''
+            bnds = Bounds([self.thetabound1lo,self.thetabound2lo],[self.thetabound1hi,self.thetabound2hi])
+            x0 = np.array([self.thetaguess1*self.thetaguess1,self.thetaguess2*self.thetaguess2])
+            self.results = []
+            self.mean_g1s = []
+            self.mean_T1s = []
+            self.mean_Z1s = []
+            self.mean_theta_r1s = []
+            self.mean_ebv1s = []
+            self.mean_T2s = []
+            self.mean_theta_r2s = []
+            self.mean_ebv2s = []
+            
+            self.var_g1s = []
+            self.var_T1s = []
+            self.var_Z1s = []
+            self.var_theta_r1s = []
+            self.var_ebv1s = []
+            self.var_T2s = []
+            self.var_theta_r2s = []
+            self.var_ebv2s = []
 
-            for curr_row in range(self.bandfluxes.shape[0]):  
+            self.gridThetar1s = []
+            self.gridThetar2s = []
+            self.gridChisqs = []
+
+            self.smallest_chi2s = []
+            self.smallest_chi2_params = []
+
+            self.newtheta_r1s = []
+            self.newtheta_r2s = []
+            self.newchi2s = []
+            
+            for curr_row in range(self.bandfluxes.shape[0]): 
                 valid_filters_this_row = []
                 for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
                     if np.isnan(bandflux) == False:
                         valid_filters_this_row.append(valid_ind)
-                self.results.append(opt.minimize(self.chisqfunc2, x0, args=(valid_filters_this_row,curr_row,), bounds=bnds))       
-                #self.results.append(opt.minimize(self.chisqfunc2torch, x0, method="TNC", jac = jacofunc, hess = hessfunc, args=(valid_filters_this_row,curr_row,), bounds=bnds))
-            print("results:\n",self.results)
+                gridChisq = np.zeros((self.g1num,self.T1num,self.Z1num,self.ebv1num,self.T2num,self.ebv2num))
+                gridThetar1 = np.zeros((self.g1num,self.T1num,self.Z1num,self.ebv1num,self.T2num,self.ebv2num))
+                gridThetar2 = np.zeros((self.g1num,self.T1num,self.Z1num,self.ebv1num,self.T2num,self.ebv2num))
+                Wtot = 0
+                smallest_chi2 = 1e14
+                smallest_chi2_params = np.zeros(8)
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num):
+                                for m in range(self.T2num):
+                                    for n in range(self.ebv2num):
+                                        g1 = self.g1grid[i,j,k,l,m,n]
+                                        T1 = self.T1grid[i,j,k,l,m,n]
+                                        Z1 = self.Z1grid[i,j,k,l,m,n]
+                                        ebv1 = self.ebv1grid[i,j,k,l,m,n]
+                                        T2 = self.T2grid[i,j,k,l,m,n]
+                                        ebv2 = self.ebv2grid[i,j,k,l,m,n]
+                                        res = opt.minimize(self.chisqfunc2, x0, args=(g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row,), bounds=bnds)
+                                        chi2 = res.fun
+                                        theta_r1 = sqrt(res.x[0])
+                                        theta_r2 = sqrt(res.x[1])
+                                        gridChisq[i,j,k,l,m,n] = chi2
+                                        print("optimized chi2: ",chi2)
+                                        gridThetar1[i,j,k,l,m,n] = theta_r1
+                                        gridThetar2[i,j,k,l,m,n] = theta_r2
+                                        print("optimized theta_r1/1e-12: ",theta_r1)
+                                        print("optimized theta_r2/1e-12: ",theta_r2)
+                                        print("\n")
+                                        if chi2 < smallest_chi2:
+                                            smallest_chi2 = chi2
+                                            smallest_chi2_params[0] = g1
+                                            smallest_chi2_params[1] = T1
+                                            smallest_chi2_params[2] = Z1
+                                            smallest_chi2_params[3] = theta_r1
+                                            smallest_chi2_params[4] = ebv1
+                                            smallest_chi2_params[5] = T2
+                                            smallest_chi2_params[6] = theta_r2
+                                            smallest_chi2_params[7] = ebv2
 
+                self.smallest_chi2s.append(0)
+                self.smallest_chi2s[curr_row] = smallest_chi2
+                print("Smallest chi2 for row {}: {}".format(self.rows[curr_row]+2,smallest_chi2))
+                self.smallest_chi2_params.append(0)
+                self.smallest_chi2_params[curr_row] = smallest_chi2_params
+                print("Associated parameter values: g1 {}, T1 {}, Z1 {}, theta_r1 {}, ebv1 {}, T2 {}, ebv2 {}".format(smallest_chi2_params[0],smallest_chi2_params[1],smallest_chi2_params[2],smallest_chi2_params[3],smallest_chi2_params[4],smallest_chi2_params[5],smallest_chi2_params[6]))
+                gridChisq -= smallest_chi2
+                self.mean_g1s.append(0)
+                self.mean_T1s.append(0)
+                self.mean_Z1s.append(0)
+                self.mean_theta_r1s.append(0)
+                self.mean_ebv1s.append(0)
+                self.mean_T2s.append(0)
+                self.mean_theta_r2s.append(0)
+                self.mean_ebv2s.append(0)
+                
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num): 
+                                for m in range(self.T2num):
+                                    for n in range(self.ebv2num):
+                                        g1 = self.g1grid[i,j,k,l,m,n]
+                                        T1 = self.T1grid[i,j,k,l,m,n]
+                                        Z1 = self.Z1grid[i,j,k,l,m,n]
+                                        theta_r1 = gridThetar1[i,j,k,l,m,n]
+                                        ebv1 = self.ebv1grid[i,j,k,l,m,n]
+                                        T2 = self.T2grid[i,j,k,l,m,n]
+                                        theta_r2 = gridThetar2[i,j,k,l,m,n]
+                                        ebv2 = self.ebv2grid[i,j,k,l,m,n]
+                                        chi2 = gridChisq[i,j,k,l,m,n]
 
-    def find_param_errors(self):
-        import numpy as np
+                                        Wtot += exp(-chi2/2)
+                                        self.mean_g1s[curr_row] += exp(-chi2/2)*g1
+                                        self.mean_T1s[curr_row] += exp(-chi2/2)*T1
+                                        self.mean_Z1s[curr_row] += exp(-chi2/2)*Z1
+                                        self.mean_theta_r1s[curr_row] += exp(-chi2/2)*theta_r1
+                                        self.mean_ebv1s[curr_row] += exp(-chi2/2)*ebv1
+                                        self.mean_T2s[curr_row] += exp(-chi2/2)*T2
+                                        self.mean_theta_r2s[curr_row] += exp(-chi2/2)*theta_r2
+                                        self.mean_ebv2s[curr_row] += exp(-chi2/2)*ebv2
+                                
+                self.mean_g1s[curr_row] /= Wtot
+                self.mean_T1s[curr_row] /= Wtot
+                self.mean_Z1s[curr_row] /= Wtot
+                self.mean_theta_r1s[curr_row] /= Wtot
+                self.mean_ebv1s[curr_row] /= Wtot
+                self.mean_T2s[curr_row] /= Wtot
+                self.mean_theta_r2s[curr_row] /= Wtot
+                self.mean_ebv2s[curr_row] /= Wtot
 
-        if self.single_star == True:
+                print("weighted mean g1 ", self.mean_g1s[curr_row])
+                print("weighted mean T1 ", self.mean_T1s[curr_row])
+                print("weighted mean Z1 ", self.mean_Z1s[curr_row])
+                print("weighted mean theta r1 ", self.mean_theta_r1s[curr_row])
+                print("weighted mean ebv1 ", self.mean_ebv1s[curr_row])
+                print("weighted mean T2 ", self.mean_T2s[curr_row])
+                print("weighted mean theta r2 ", self.mean_theta_r2s[curr_row])
+                print("weighted mean ebv2 ", self.mean_ebv2s[curr_row])
 
-            self.errorsallrows = []
-            for curr_row in range(self.bandfluxes.shape[0]):  
-                valid_filters_this_row = []
-                for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
-                    if np.isnan(bandflux) == False:
-                        valid_filters_this_row.append(valid_ind)
-                errorsthisrow = []
-                g,T,Z,theta_r_sq,E_bv = self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4]
-                ###
-                otherstup = (T,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row)
-                try:
-                    glowererror = g - opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[self.gbound1lo,g]).root
-                except:
-                    glowererror = "N/A"
-                try:
-                    guppererror = opt.root_scalar(self.chisqfuncerror, args=(0,otherstup,),method="brentq",bracket=[g,self.gbound1hi]).root - g
-                except:
-                    guppererror = "N/A"
-                errorsthisrow.append([glowererror,guppererror])
-                ###
-                otherstup = (g,Z,theta_r_sq,E_bv,valid_filters_this_row,curr_row)              
-                try:
-                    T1lowererror = (T - opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[self.Tbound1lo,T]).root)*10000
-                except:
-                    T1lowererror = "N/A"
-                try:    
-                    T1uppererror = (opt.root_scalar(self.chisqfuncerror, args=(1,otherstup,),method="brentq",bracket=[T,self.Tbound1hi]).root - T)*10000
-                except:
-                    T1uppererror = "N/A"
-                errorsthisrow.append([T1lowererror,T1uppererror])
-                ###
-                otherstup = (g,T,theta_r_sq,E_bv,valid_filters_this_row,curr_row)              
-                try:
-                    Zlowererror = Z - opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[self.Zbound1lo,Z]).root
-                except:
-                    Zlowererror = "N/A"
-                try:
-                    Zuppererror = opt.root_scalar(self.chisqfuncerror, args=(2,otherstup,),method="brentq",bracket=[Z,self.Zbound1hi]).root - Z
-                except:
-                    Zuppererror = "N/A"
-                errorsthisrow.append([Zlowererror,Zuppererror])
-                ###
-                otherstup = (g,T,Z,E_bv,valid_filters_this_row,curr_row)              
-                try:
-                    theta_r_sqlowererror = (theta_r_sq - opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[self.thetabound1lo,theta_r_sq]).root)*10**(-12)
-                except:
-                    theta_r_sqlowererror = "N/A"
-                try:
-                    theta_r_squppererror = (opt.root_scalar(self.chisqfuncerror, args=(3,otherstup,),method="brentq",bracket=[theta_r_sq,self.thetabound1hi]).root-theta_r_sq)*10**(-12)
-                except:
-                    theta_r_squppererror = "N/A"
-                errorsthisrow.append([theta_r_sqlowererror,theta_r_squppererror])
-                ###
-                otherstup = (g,T,Z,theta_r_sq,valid_filters_this_row,curr_row)              
-                try:
-                    E_bvlowererror = E_bv - opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[self.ebvbound1lo,E_bv]).root
-                except:
-                    E_bvlowererror = "N/A"
-                try:
-                    E_bvuppererror = opt.root_scalar(self.chisqfuncerror, args=(4,otherstup,),method="brentq",bracket=[E_bv,self.ebvbound1hi]).root - E_bv
-                except:
-                    E_bvuppererror = "N/A"
-                errorsthisrow.append([E_bvlowererror,E_bvuppererror])
-                ###
-                self.errorsallrows.append(errorsthisrow)
+                self.var_g1s.append(0)
+                self.var_T1s.append(0)
+                self.var_Z1s.append(0)
+                self.var_theta_r1s.append(0)
+                self.var_ebv1s.append(0)
+                self.var_T2s.append(0)
+                self.var_theta_r2s.append(0)
+                self.var_ebv2s.append(0)
 
+                for i in range(self.g1num):
+                    for j in range(self.T1num):
+                        for k in range(self.Z1num):
+                            for l in range(self.ebv1num):
+                                for m in range(self.T2num):
+                                    for n in range(self.ebv2num):
+                                        g1 = self.g1grid[i,j,k,l,m,n]
+                                        T1 = self.T1grid[i,j,k,l,m,n]
+                                        Z1 = self.Z1grid[i,j,k,l,m,n]
+                                        theta_r1 = gridThetar1[i,j,k,l,m,n]
+                                        ebv1 = self.ebv1grid[i,j,k,l,m,n]
+                                        T2 = self.T1grid[i,j,k,l,m,n]
+                                        theta_r2 = gridThetar2[i,j,k,l,m,n]
+                                        ebv2 = self.ebv2grid[i,j,k,l,m,n]
+                                        chi2 = gridChisq[i,j,k,l,m,n]
 
-        elif self.double_star == True:
+                                        self.var_g1s[curr_row] += exp(-chi2/2)*(g1-self.mean_g1s[curr_row])*(g1-self.mean_g1s[curr_row])
+                                        self.var_T1s[curr_row] += exp(-chi2/2)*(T1-self.mean_T1s[curr_row])*(T1-self.mean_T1s[curr_row])
+                                        self.var_Z1s[curr_row] += exp(-chi2/2)*(Z1-self.mean_Z1s[curr_row])*(Z1-self.mean_Z1s[curr_row])
+                                        self.var_theta_r1s[curr_row] += exp(-chi2/2)*(theta_r1-self.mean_theta_r1s[curr_row])*(theta_r1-self.mean_theta_r1s[curr_row])
+                                        self.var_ebv1s[curr_row] += exp(-chi2/2)*(ebv1-self.mean_ebv1s[curr_row])*(ebv1-self.mean_ebv1s[curr_row])
+                                        self.var_T2s[curr_row] += exp(-chi2/2)*(T2-self.mean_T2s[curr_row])*(T2-self.mean_T2s[curr_row])
+                                        self.var_theta_r2s[curr_row] += exp(-chi2/2)*(theta_r2-self.mean_theta_r2s[curr_row])*(theta_r2-self.mean_theta_r2s[curr_row])
+                                        self.var_ebv2s[curr_row] += exp(-chi2/2)*(ebv2-self.mean_ebv2s[curr_row])*(ebv2-self.mean_ebv2s[curr_row])
+                                
+                gridChisq += smallest_chi2
+                self.gridThetar1s.append(gridThetar1.flatten())
+                self.gridThetar2s.append(gridThetar2.flatten())
+                self.gridChisqs.append(gridChisq.flatten())
+                                
+                self.var_g1s[curr_row] /= Wtot
+                self.var_Z1s[curr_row] /= Wtot
+                self.var_T1s[curr_row] /= Wtot
+                self.var_theta_r1s[curr_row] /= Wtot
+                self.var_ebv1s[curr_row] /= Wtot
+                self.var_T2s[curr_row] /= Wtot
+                self.var_theta_r2s[curr_row] /= Wtot
+                self.var_ebv2s[curr_row] /= Wtot
 
-            self.errorsallrows = []
-            for curr_row in range(self.bandfluxes.shape[0]):  
-                valid_filters_this_row = []
-                for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
-                    if np.isnan(bandflux) == False:
-                        valid_filters_this_row.append(valid_ind)
-                errorsthisrow = []
-                g1,T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2 = self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4],self.results[curr_row].x[5],self.results[curr_row].x[6],self.results[curr_row].x[7]
-                ###
-                otherstup = (T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)
-                try:
-                    g1lowererror = g1-opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[self.gbound1lo,g1]).root
-                except:
-                    g1lowererror = "N/A"
-                try:
-                    g1uppererror = opt.root_scalar(self.chisqfunc2error, args=(0,otherstup,),method="brentq",bracket=[g1,self.gbound1hi]).root-g1
-                except:
-                    g1uppererror = "N/A"
-                errorsthisrow.append([g1lowererror,g1uppererror])
-                ###
-                otherstup = (g1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    T1lowererror = (T1-opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[self.Tbound1lo,T1]).root)*10000
-                except:
-                    T1lowererror = "N/A"
-                try:    
-                    T1uppererror = (opt.root_scalar(self.chisqfunc2error, args=(1,otherstup,),method="brentq",bracket=[T1,self.Tbound1hi]).root-T1)*10000
-                except:
-                    T1uppererror = "N/A"
-                errorsthisrow.append([T1lowererror,T1uppererror])
-                ###
-                otherstup = (g1,T1,theta_r1_sq,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    Z1lowererror = Z1-opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[self.Zbound1lo,Z1]).root
-                except:
-                    Z1lowererror = "N/A"
-                try:
-                    Z1uppererror = opt.root_scalar(self.chisqfunc2error, args=(2,otherstup,),method="brentq",bracket=[Z1,self.Zbound1hi]).root-Z1
-                except:
-                    Z1uppererror = "N/A"
-                errorsthisrow.append([Z1lowererror,Z1uppererror])
-                ###
-                otherstup = (g1,T1,Z1,E_bv1,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    theta_r1_sqlowererror = (theta_r1_sq - opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[self.thetabound1lo,theta_r1_sq]).root)*10**(-12)
-                except:
-                    theta_r1_sqlowererror = "N/A"
-                try:
-                    theta_r1_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(3,otherstup,),method="brentq",bracket=[theta_r1_sq,self.thetabound1hi]).root-theta_r1_sq)*10**(-12)
-                except:
-                    theta_r1_squppererror = "N/A"
-                errorsthisrow.append([theta_r1_sqlowererror,theta_r1_squppererror])
-                ###
-                otherstup = (g1,T1,Z1,theta_r1_sq,T2,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    E_bv1lowererror = E_bv1 - opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[self.ebvbound1lo,E_bv1]).root
-                except:
-                    E_bv1lowererror = "N/A"
-                try:
-                    E_bv1uppererror = opt.root_scalar(self.chisqfunc2error, args=(4,otherstup,),method="brentq",bracket=[E_bv1,self.ebvbound1hi]).root - E_bv1
-                except:
-                    E_bv1uppererror = "N/A"
-                errorsthisrow.append([E_bv1lowererror,E_bv1uppererror])
-                ###
-                otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,theta_r2_sq,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    T2lowererror = (T2 - opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[self.Tbound2lo,T2]).root)*10000
-                except:
-                    T2lowererror = "N/A"
-                try:
-                    T2uppererror = (opt.root_scalar(self.chisqfunc2error, args=(5,otherstup,),method="brentq",bracket=[T2,self.Tbound2hi]).root - T2)*10000
-                except:
-                    T2uppererror = "N/A"
-                errorsthisrow.append([T2lowererror,T2uppererror])
-                ###
-                otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,T2,E_bv2,valid_filters_this_row,curr_row)              
-                try:
-                    theta_r2_sqlowererror = (theta_r2_sq - opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[self.thetabound2lo,theta_r2_sq]).root)*10**(-12)
-                except:
-                    theta_r2_sqlowererror = "N/A"
-                try:
-                    theta_r2_squppererror = (opt.root_scalar(self.chisqfunc2error, args=(6,otherstup,),method="brentq",bracket=[theta_r2_sq,self.thetabound2hi]).root - theta_r2_sq)*10**(-12)
-                except:
-                    theta_r2_squppererror = "N/A"
-                errorsthisrow.append([theta_r2_sqlowererror,theta_r2_squppererror])
-                ###
-                otherstup = (g1,T1,Z1,theta_r1_sq,E_bv1,T2,theta_r2_sq,valid_filters_this_row,curr_row)              
-                try:
-                    E_bv2lowererror = E_bv2 - opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[self.ebvbound2lo,E_bv2]).root
-                except:
-                    E_bv2lowererror = "N/A"
-                try:
-                    E_bv2uppererror = opt.root_scalar(self.chisqfunc2error, args=(7,otherstup,),method="brentq",bracket=[E_bv2,self.ebvbound2hi]).root - E_bv2
-                except:
-                    E_bv2uppererror = "N/A"
-                errorsthisrow.append([E_bv2lowererror,E_bv2uppererror])
+                print("weighted var g1 ", self.var_g1s[curr_row])
+                print("weighted var T1 ", self.var_T1s[curr_row])
+                print("weighted var Z1 ", self.var_Z1s[curr_row])
+                print("weighted var theta r1 ", self.var_theta_r1s[curr_row])
+                print("weighted var ebv1 ", self.var_ebv1s[curr_row])
+                print("weighted var T2 ", self.var_T2s[curr_row])
+                print("weighted var theta r2 ", self.var_theta_r2s[curr_row])
+                print("weighted var ebv2 ", self.var_ebv2s[curr_row])
 
-                self.errorsallrows.append(errorsthisrow)
+                x02 = np.array([self.mean_theta_r1s[curr_row]*self.mean_theta_r1s[curr_row],self.mean_theta_r2s[curr_row]*self.mean_theta_r2s[curr_row]])
+                res2 = opt.minimize(self.minichisqfunc2_double, x02, args=(self.mean_g1s[curr_row],self.mean_T1s[curr_row],self.mean_Z1s[curr_row],self.mean_ebv1s[curr_row],self.mean_T2s[curr_row],self.mean_ebv2s[curr_row],valid_filters_this_row,curr_row,), bounds=bnds)
 
-    def get_solar_radii_single(self,curr_row):
-        if self.disttostar != "N":
-            import math
-            r_sol1 = math.sqrt(self.results[curr_row].x[3])*1e-12*self.disttostar*3.0857e21/6.9598e10
-            try:
-                r_sol1_err_lo = self.errorsallrows[curr_row][3][0]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol1_err_lo = "N/A"
-            try:
-                r_sol1_err_hi = self.errorsallrows[curr_row][3][1]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol1_err_hi = "N/A"
-            self.rsol_list.append([r_sol1,r_sol1_err_lo,r_sol1_err_hi])
+                newchi2 = res2.fun
+                newtheta_r1 = sqrt(res2.x[0])
+                newtheta_r2 = sqrt(res2.x[1])
 
-    def get_solar_radii_double(self,curr_row):
-        if self.disttostar != "N":
-            import math
-            r_sol1 = math.sqrt(self.results[curr_row].x[3])*1e-12*self.disttostar*3.0857e21/6.9598e10
-            try:
-                r_sol1_err_lo = self.errorsallrows[curr_row][3][0]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol1_err_lo = "N/A"
-            try:
-                r_sol1_err_hi = self.errorsallrows[curr_row][3][1]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol1_err_hi = "N/A"
-            r_sol2 = math.sqrt(self.results[curr_row].x[6])*1e-12*self.disttostar*3.0857e21/6.9598e10
-            try:
-                r_sol2_err_lo = self.errorsallrows[curr_row][6][0]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol2_err_lo = "N/A"
-            try:
-                r_sol2_err_hi = self.errorsallrows[curr_row][6][1]*self.disttostar*3.0857e21/6.9598e10
-            except:
-                r_sol2_err_hi = "N/A"
-            self.rsol_list.append([r_sol1,r_sol1_err_lo,r_sol1_err_hi,r_sol2,r_sol2_err_lo,r_sol2_err_hi])
-           
+                print("new chi2: ", newchi2)
+                print("new theta_r1: ", newtheta_r1)
+                print("new theta_r2: ", newtheta_r2)
+
+                self.newchi2s.append(newchi2)
+                self.newtheta_r1s.append(newtheta_r1)
+                self.newtheta_r2s.append(newtheta_r2)
+                
+
     def display_all_results(self):
         if self.dispresults == 1:
             if self.single_star == True:
-                self.rsol_list = []
+                self.mean_fluxes = []
+                self.mean_chi2s = []
                 for curr_row in range(self.bandfluxes.shape[0]): 
-                    self.get_solar_radii_single(curr_row)
                     self.display_results_single(curr_row)
             elif self.double_star == True:
-                self.rsol_list = []
+                self.mean_hotfluxes = []
+                self.mean_coolfluxes = []
+                self.mean_chi2s = []
                 for curr_row in range(self.bandfluxes.shape[0]): 
-                    self.get_solar_radii_double(curr_row)
                     self.display_results_double(curr_row)
 
     def save_output(self):
+
+        import numpy as np
         import pandas as pd
 
-        if self.fluxresults == 1:
-            import numpy as np
-            import pandas as pd
+        if self.weightedmeanvarresults == 1:
             
             if self.single_star == True:
 
-                models = self.bandfluxes.copy(deep=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    valid_filters_this_row = []
-                    for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
-                        if np.isnan(bandflux) == False:
-                            valid_filters_this_row.append(valid_ind)
+                df1 = pd.DataFrame({
+                    'row' : [i+2 for i in self.rows],
+                    'weighted mean log_g1' : self.mean_g1s,
+                    'weighted mean T1' : self.mean_T1s,
+                    'weighted mean Z1' : self.mean_Z1s,
+                    'weighted mean theta_r1' : self.mean_theta_r1s,
+                    'weighted mean ebv1' : self.mean_ebv1s,
+                    'weighted var log_g1' : self.var_g1s,
+                    'weighted var T1' : self.var_T1s,
+                    'weighted var Z1' : self.var_Z1s,
+                    'weighted var theta_r1' : self.var_theta_r1s,
+                    'weighted var ebv1' : self.var_ebv1s,
+                    'model flux using weighted mean parameters' : self.mean_fluxes,
+                    'chi2 using weighted mean parameters' : self.mean_chi2s,
+                    'new theta_r1' : self.newtheta_r1s,
+                    'new chi2' : self.newchi2s})
 
-                    best_tup = (self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4])
-                    model = self.minichisqfunc_single(best_tup,valid_filters_this_row)
-                    used = 0 
-                    for colno,col in enumerate(models.loc[curr_row,:]):
-                        if np.isnan(col) == False:
-                            models.iat[curr_row,colno] = model[used]
-                            used += 1
-                         
-                colnames = {"F148W_meas_flux [mJy]" : [], "F148W_err [mJy]" : [], "F148W_avg_wav [nm]" : [], "F148W_model_flux [mJy]" : [], "F169M_meas_flux [mJy]" : [], "F169M_err [mJy]" : [], "F169M_avg_wav [nm]" : [], "F169M_model_flux [mJy]" : [], "F172M_meas_flux [mJy]" : [], "F172M_err [mJy]" : [], "F172M_avg_wav [nm]" : [], "F172M_model_flux [mJy]" : [], "N219M_meas_flux [mJy]" : [], "N219M_err [mJy]" : [], "N219M_avg_wav [nm]" : [], "N219M_model_flux [mJy]" : [], "N279N_meas_flux [mJy]" : [], "N279N_err [mJy]" : [], "N279N_avg_wav [nm]" : [], "N279N_model_flux [mJy]" : [], "f275w_meas_flux [mJy]" : [], "f275w_err [mJy]" : [], "f275w_avg_wav [nm]" : [], "f275w_model_flux [mJy]" : [], "f336w_meas_flux [mJy]" : [], "f336w_err [mJy]" : [], "f336w_avg_wav [nm]" : [], "f336w_model_flux [mJy]" : [], "f475w_meas_flux [mJy]" : [], "f475w_err [mJy]" : [], "f475w_avg_wav [nm]" : [], "f475w_model_flux [mJy]" : [], "f814w_meas_flux [mJy]" : [], "f814w_err [mJy]" : [], "f814w_avg_wav [nm]" : [], "f814w_model_flux [mJy]" : [], "f110w_meas_flux [mJy]" : [], "f110w_err [mJy]" : [], "f110w_avg_wav [nm]" : [], "f110w_model_flux [mJy]" : [], "f160w_meas_flux [mJy]" : [], "f160w_err [mJy]" : [], "f160w_avg_wav [nm]" : [], "f160w_model_flux [mJy]" : []}
-                fluxresultsdf = pd.DataFrame(colnames)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {"F148W_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,0], "F148W_err [mJy]" : self.bandfluxerrors.iat[curr_row,0], "F148W_avg_wav [nm]" : self.avgwvlist[0], "F148W_model_flux [mJy]" : models.iat[curr_row,0], "F169M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,1], "F169M_err [mJy]" : self.bandfluxerrors.iat[curr_row,1], "F169M_avg_wav [nm]" : self.avgwvlist[1], "F169M_model_flux [mJy]" : models.iat[curr_row,1], "F172M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,2], "F172M_err [mJy]" : self.bandfluxerrors.iat[curr_row,2], "F172M_avg_wav [nm]" : self.avgwvlist[2], "F172M_model_flux [mJy]" : models.iat[curr_row,2], "N219M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,3], "N219M_err [mJy]" : self.bandfluxerrors.iat[curr_row,3], "N219M_avg_wav [nm]" : self.avgwvlist[3], "N219M_model_flux [mJy]" : models.iat[curr_row,3], "N279N_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,4], "N279N_err [mJy]" : self.bandfluxerrors.iat[curr_row,4], "N279N_avg_wav [nm]" : self.avgwvlist[4], "N279N_model_flux [mJy]" : models.iat[curr_row,4], "f275w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,5], "f275w_err [mJy]" : self.bandfluxerrors.iat[curr_row,5], "f275w_avg_wav [nm]" : self.avgwvlist[5], "f275w_model_flux [mJy]" : models.iat[curr_row,5], "f336w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,6], "f336w_err [mJy]" : self.bandfluxerrors.iat[curr_row,6], "f336w_avg_wav [nm]" : self.avgwvlist[6], "f336w_model_flux [mJy]" : models.iat[curr_row,6], "f475w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,7], "f475w_err [mJy]" : self.bandfluxerrors.iat[curr_row,7], "f475w_avg_wav [nm]" : self.avgwvlist[7], "f475w_model_flux [mJy]" : models.iat[curr_row,7], "f814w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,8], "f814w_err [mJy]" : self.bandfluxerrors.iat[curr_row,8], "f814w_avg_wav [nm]" : self.avgwvlist[8], "f814w_model_flux [mJy]" : models.iat[curr_row,8], "f110w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,9], "f110w_err [mJy]" : self.bandfluxerrors.iat[curr_row,9], "f110w_avg_wav [nm]" : self.avgwvlist[9], "f110w_model_flux [mJy]" : models.iat[curr_row,9], "f160w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,10], "f160w_err [mJy]" : self.bandfluxerrors.iat[curr_row,10], "f160w_avg_wav [nm]" : self.avgwvlist[10], "f160w_model_flux [mJy]" : models.iat[curr_row,10]}
-                    fluxresultsdf =fluxresultsdf.append(rowdict,ignore_index=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    fluxresultsdf = fluxresultsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
-                try:
-                    fluxresultsdf.to_csv("{}".format(self.fluxfilename))
-                except:
-                    import tkinter as tk
-                    from tkinter import messagebox
-                    tk.messagebox.showerror('Error','An error occurred. This can happen if a file is open while trying to overwrite it. Please close any relevant files and try again.')  
-            
-            
+                df1.to_csv("{}".format(self.weightedmeanvarname),index=False)
+        
             elif self.double_star == True:
 
-                hotmodels = self.bandfluxes.copy(deep=True)
-                coolmodels = self.bandfluxes.copy(deep=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    valid_filters_this_row = []
-                    for valid_ind,bandflux in enumerate(self.bandfluxes.loc[curr_row,:]):
-                        if np.isnan(bandflux) == False:
-                            valid_filters_this_row.append(valid_ind)
+                '''print(self.mean_g1s)
+                print(self.mean_T1s)
+                print(self.mean_Z1s)
+                print(self.mean_theta_r1s)
+                print(self.mean_ebv1s)
+                print(self.mean_T2s)
+                print(self.mean_theta_r2s)
+                print(self.mean_ebv2s)
+                print(self.var_g1s)
+                print(self.var_T1s)
+                print(self.var_Z1s)
+                print(self.var_theta_r1s)
+                print(self.var_ebv1s)
+                print(self.var_T2s)
+                print(self.var_theta_r2s)
+                print(self.var_ebv2s)
+                print(self.mean_hotfluxes)
+                print(self.mean_coolfluxes)
+                print(self.mean_chi2s)
+                print(self.newtheta_r1s)
+                print(self.newtheta_r2s)
+                print(self.newchi2s)'''
 
-                    best_tup = (self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4],self.results[curr_row].x[5],self.results[curr_row].x[6],self.results[curr_row].x[7])
-                    hot,cool = self.minichisqfunc_double(best_tup,valid_filters_this_row)
-                    usedhot = 0
-                    usedcool = 0
-                    for colno,col in enumerate(hotmodels.loc[curr_row,:]):
-                        if np.isnan(col) == False:
-                            hotmodels.iat[curr_row,colno] = hot[usedhot]
-                            usedhot += 1
-                    for colno,col in enumerate(coolmodels.loc[curr_row,:]):
-                        if np.isnan(col) == False:
-                            coolmodels.iat[curr_row,colno] = cool[usedcool]
-                            usedcool += 1
-                
-                colnames = {"F148W_meas_flux [mJy]" : [], "F148W_err [mJy]" : [], "F148W_avg_wav [nm]" : [], "F148W_hot_flux" : [], "F148W_cool_flux" : [], "F169M_meas_flux [mJy]" : [], "F169M_err [mJy]" : [], "F169M_avg_wav [nm]" : [], "F169M_hot_flux [mJy]" : [], "F169M_cool_flux [mJy]" : [], "F172M_meas_flux [mJy]" : [], "F172M_err [mJy]" : [], "F172M_avg_wav [nm]" : [], "F172M_hot_flux [mJy]" : [], "F172M_cool_flux [mJy]" : [], "N219M_meas_flux [mJy]" : [], "N219M_err [mJy]" : [], "N219M_avg_wav [nm]" : [], "N219M_hot_flux [mJy]" : [], "N219M_cool_flux [mJy]" : [], "N279N_meas_flux [mJy]" : [], "N279N_err [mJy]" : [], "N279N_avg_wav [nm]" : [], "N279N_hot_flux [mJy]" : [], "N279N_cool_flux [mJy]" : [], "f275w_meas_flux [mJy]" : [], "f275w_err [mJy]" : [], "f275w_avg_wav [nm]" : [], "f275w_hot_flux [mJy]" : [], "f275w_cool_flux [mJy]" : [], "f336w_meas_flux [mJy]" : [], "f336w_err [mJy]" : [], "f336w_avg_wav [nm]" : [], "f336w_hot_flux [mJy]" : [], "f336w_cool_flux [mJy]" : [], "f475w_meas_flux [mJy]" : [], "f475w_err [mJy]" : [], "f475w_avg_wav [nm]" : [], "f475w_hot_flux [mJy]" : [], "f475w_cool_flux [mJy]" : [], "f814w_meas_flux [mJy]" : [], "f814w_err [mJy]" : [], "f814w_avg_wav [nm]" : [], "f814w_hot_flux [mJy]" : [], "f814w_cool_flux [mJy]" : [], "f110w_meas_flux [mJy]" : [], "f110w_err [mJy]" : [], "f110w_avg_wav [nm]" : [], "f110w_hot_flux [mJy]" : [], "f110w_cool_flux [mJy]" : [], "f160w_meas_flux [mJy]" : [], "f160w_err [mJy]" : [], "f160w_avg_wav [nm]" : [], "f160w_hot_flux [mJy]" : [], "f160w_cool_flux [mJy]" : []}
-                fluxresultsdf = pd.DataFrame(colnames)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {"F148W_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,0], "F148W_err [mJy]" : self.bandfluxerrors.iat[curr_row,0], "F148W_avg_wav [nm]" : self.avgwvlist[0], "F148W_hot_flux" : hotmodels.iat[curr_row,0], "F148W_cool_flux" : coolmodels.iat[curr_row,0], "F169M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,1], "F169M_err [mJy]" : self.bandfluxerrors.iat[curr_row,1], "F169M_avg_wav [nm]" : self.avgwvlist[1], "F169M_hot_flux [mJy]" : hotmodels.iat[curr_row,1], "F169M_cool_flux [mJy]" : coolmodels.iat[curr_row,1], "F172M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,2], "F172M_err [mJy]" : self.bandfluxerrors.iat[curr_row,2], "F172M_avg_wav [nm]" : self.avgwvlist[2], "F172M_hot_flux [mJy]" : hotmodels.iat[curr_row,2], "F172M_cool_flux [mJy]" : coolmodels.iat[curr_row,2], "N219M_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,3], "N219M_err [mJy]" : self.bandfluxerrors.iat[curr_row,3], "N219M_avg_wav [nm]" : self.avgwvlist[3], "N219M_hot_flux [mJy]" : hotmodels.iat[curr_row,3], "N219M_cool_flux [mJy]" : coolmodels.iat[curr_row,3], "N279N_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,4], "N279N_err [mJy]" : self.bandfluxerrors.iat[curr_row,4], "N279N_avg_wav [nm]" : self.avgwvlist[4], "N279N_hot_flux [mJy]" : hotmodels.iat[curr_row,4], "N279N_cool_flux [mJy]" : coolmodels.iat[curr_row,4], "f275w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,5], "f275w_err [mJy]" : self.bandfluxerrors.iat[curr_row,5], "f275w_avg_wav [nm]" : self.avgwvlist[5], "f275w_hot_flux [mJy]" : hotmodels.iat[curr_row,5], "f275w_cool_flux [mJy]" : coolmodels.iat[curr_row,5], "f336w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,6], "f336w_err [mJy]" : self.bandfluxerrors.iat[curr_row,6], "f336w_avg_wav [nm]" : self.avgwvlist[6], "f336w_hot_flux [mJy]" : hotmodels.iat[curr_row,6], "f336w_cool_flux [mJy]" : coolmodels.iat[curr_row,6], "f475w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,7], "f475w_err [mJy]" : self.bandfluxerrors.iat[curr_row,7], "f475w_avg_wav [nm]" : self.avgwvlist[7], "f475w_hot_flux [mJy]" : hotmodels.iat[curr_row,7], "f475w_cool_flux [mJy]" : coolmodels.iat[curr_row,7], "f814w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,8], "f814w_err [mJy]" : self.bandfluxerrors.iat[curr_row,8], "f814w_avg_wav [nm]" : self.avgwvlist[8], "f814w_hot_flux [mJy]" : hotmodels.iat[curr_row,8], "f814w_cool_flux [mJy]" : coolmodels.iat[curr_row,8], "f110w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,9], "f110w_err [mJy]" : self.bandfluxerrors.iat[curr_row,9], "f110w_avg_wav [nm]" : self.avgwvlist[9], "f110w_hot_flux [mJy]" : hotmodels.iat[curr_row,9], "f110w_cool_flux [mJy]" : coolmodels.iat[curr_row,9], "f160w_meas_flux [mJy]" : self.bandfluxes.iat[curr_row,10], "f160w_err [mJy]" : self.bandfluxerrors.iat[curr_row,10], "f160w_avg_wav [nm]" : self.avgwvlist[10], "f160w_hot_flux [mJy]" : hotmodels.iat[curr_row,10], "f160w_cool_flux [mJy]" : coolmodels.iat[curr_row,10]}
-                    fluxresultsdf =fluxresultsdf.append(rowdict,ignore_index=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    fluxresultsdf = fluxresultsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
-                try:
-                    fluxresultsdf.to_csv("{}".format(self.fluxfilename))
-                except:
-                    import tkinter as tk
-                    from tkinter import messagebox
-                    tk.messagebox.showerror('Error','An error occurred. This can happen if a file is open while trying to overwrite it. Please close any relevant files and try again.') 
+                df1 = pd.DataFrame({
+                    'row' : [i+2 for i in self.rows],
+                    'weighted mean log_g1' : self.mean_g1s,
+                    'weighted mean T1' : self.mean_T1s,
+                    'weighted mean Z1' : self.mean_Z1s,
+                    'weighted mean theta_r1' : self.mean_theta_r1s,
+                    'weighted mean ebv1' : self.mean_ebv1s,
+                    'weighted mean T2' : self.mean_T2s,
+                    'weighted mean theta_r2' : self.mean_theta_r2s,
+                    'weighted mean ebv2' : self.mean_ebv2s,
+                    'weighted var log_g1' : self.var_g1s,
+                    'weighted var T1' : self.var_T1s,
+                    'weighted var Z1' : self.var_Z1s,
+                    'weighted var theta_r1' : self.var_theta_r1s,
+                    'weighted var ebv1' : self.var_ebv1s,
+                    'weighted var T2' : self.var_T2s,
+                    'weighted var theta_r2' : self.var_theta_r2s,
+                    'weighted var ebv2' : self.var_ebv2s,
+                    'hot model flux using weighted mean parameters' : self.mean_hotfluxes,
+                    'cool model flux using weighted mean parameters' : self.mean_coolfluxes,
+                    'chi2 using weighted mean parameters' : self.mean_chi2s,
+                    'new theta_r1' : self.newtheta_r1s,
+                    'new theta_r2' : self.newtheta_r2s,
+                    'new chi2' : self.newchi2s})
 
-        if self.chiparams == 1:
-            
+                df1.to_csv("{}".format(self.weightedmeanvarname),index=False)
+
+        if self.gridresults == 1:
+
             if self.single_star == True:
-                import math
-                colnames = {'minimized chi^2' : [], 'log_g' : [], 'log_g_err_lo' : [], 'log_g_err_hi' : [], 'temperature' : [], 'temperature_err_lo' : [], 'temperature_err_hi' : [], 'abundance' : [], 'abundance_err_lo' : [], 'abundance_err_hi' : [], 'theta_r' : [], 'theta_r_err_lo' : [], 'theta_r_err_hi' : [], 'E(B-V)' : [], 'E(B-V)_err_lo' : [], 'E(B-V)_err_hi' : [], 'R' : [], 'R_err_lo' : [], 'R_err_hi' : []}
-                chiparamsdf = pd.DataFrame(colnames).copy(deep=True)
+
                 for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g' : self.results[curr_row].x[0], 'log_g_err_lo' : self.errorsallrows[curr_row][0][0], 'log_g_err_hi' : self.errorsallrows[curr_row][0][1], 'temperature' : self.results[curr_row].x[1]*10000, 'temperature_err_lo' : self.errorsallrows[curr_row][1][0], 'temperature_err_hi' : self.errorsallrows[curr_row][1][1], 'abundance' : self.results[curr_row].x[2], 'abundance_err_lo' : self.errorsallrows[curr_row][2][0], 'abundance_err_hi' : self.errorsallrows[curr_row][2][1], 'theta_r' : math.sqrt(self.results[curr_row].x[3])*1e-12, 'theta_r_err_lo' : self.errorsallrows[curr_row][3][0], 'theta_r_err_hi' : self.errorsallrows[curr_row][3][1], 'E(B-V)' : self.results[curr_row].x[4], 'E(B-V)_err_lo' : self.errorsallrows[curr_row][4][0], 'E(B-V)_err_hi' : self.errorsallrows[curr_row][4][1], 'R' : self.rsol_list[curr_row][0], 'R_err_lo' : self.rsol_list[curr_row][1], 'R_err_hi' : self.rsol_list[curr_row][2]}
-                    chiparamsdf = chiparamsdf.append(rowdict,ignore_index=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    chiparamsdf = chiparamsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
-                try:
-                    chiparamsdf.to_csv("{}".format(self.chifilename))
-                except:
-                    import tkinter as tk
-                    from tkinter import messagebox
-                    tk.messagebox.showerror('Error','An error occurred. Sometimes this can happen when trying to overwrite a file. Please remove output files from the program folder and try again.')         
+
+                    a = pd.DataFrame({
+                        'log(g)' : self.g1grid.flatten(),
+                        'temperature/10000' : self.T1grid.flatten(),
+                        'abundance' : self.Z1grid.flatten(),
+                        'theta_r/1e-12' : self.gridThetars[curr_row],
+                        'E(B-V)' : self.ebv1grid.flatten(),
+                        'Chi squared' : self.gridChisqs[curr_row]})
+                    
+                    parts = self.gridname.split(".")
+                    numbered_gridname = parts[0] + str(self.rows[curr_row]+2) + "." + parts[1]
+
+                    a.to_csv("{}".format(numbered_gridname),index=False)
             
             elif self.double_star == True:
-                import math
-                colnames = {'minimized chi^2' : [], 'log_g_hot' : [], 'log_g_hot_err_lo' : [], 'log_g_hot_err_hi' : [], 'temperature_hot' : [], 'temperature_hot_err_lo' : [], 'temperature_hot_err_hi' : [], 'abundance_hot' : [], 'abundance_hot_err_lo' : [], 'abundance_hot_err_hi' : [], 'theta_r_hot' : [], 'theta_r_hot_err_lo' : [], 'theta_r_hot_err_hi' : [], 'E(B-V)_hot' : [],  'E(B-V)_hot_err_lo' : [], 'E(B-V)_hot_err_hi' : [], 'temperature_cool' : [], 'temperature_cool_err_lo' : [], 'temperature_cool_err_hi' : [], 'theta_r_cool' : [], 'theta_r_cool_err_lo' : [], 'theta_r_cool_err_hi' : [], 'E(B-V)_cool' : [], 'E(B-V)_cool_err_lo' : [], 'E(B-V)_cool_err_hi' : [], 'R_hot' : [], 'R_hot_err_lo' : [], 'R_hot_err_hi' : [], 'R_cool' : [], 'R_cool_err_lo' : [], 'R_cool_err_hi' : []}
-                chiparamsdf = pd.DataFrame(colnames).copy(deep=True)
+
                 for curr_row in range(self.bandfluxes.shape[0]):
-                    rowdict = {'minimized chi^2' : self.results[curr_row].fun, 'log_g_hot' : self.results[curr_row].x[0], 'log_g_hot_err_lo' : self.errorsallrows[curr_row][0][0], 'log_g_hot_err_hi' : self.errorsallrows[curr_row][0][1], 'temperature_hot' : self.results[curr_row].x[1]*10000, 'temperature_hot_err_lo' : self.errorsallrows[curr_row][1][0], 'temperature_hot_err_hi' : self.errorsallrows[curr_row][1][1], 'abundance_hot' : self.results[curr_row].x[2], 'abundance_hot_err_lo' : self.errorsallrows[curr_row][2][0], 'abundance_hot_err_hi' : self.errorsallrows[curr_row][2][1], 'theta_r_hot' : math.sqrt(self.results[curr_row].x[3])*1e-12, 'theta_r_hot_err_lo' : self.errorsallrows[curr_row][3][0], 'theta_r_hot_err_hi' : self.errorsallrows[curr_row][3][1], 'E(B-V)_hot' : self.results[curr_row].x[4], 'E(B-V)_hot_err_lo' : self.errorsallrows[curr_row][4][0], 'E(B-V)_hot_err_hi' : self.errorsallrows[curr_row][4][1], 'temperature_cool' : self.results[curr_row].x[5]*10000, 'temperature_cool_err_lo' : self.errorsallrows[curr_row][5][0], 'temperature_cool_err_hi' : self.errorsallrows[curr_row][5][1], 'theta_r_cool' : math.sqrt(self.results[curr_row].x[6])*1e-12, 'theta_r_cool_err_lo' : self.errorsallrows[curr_row][6][0], 'theta_r_cool_err_hi' : self.errorsallrows[curr_row][6][1], 'E(B-V)_cool' : self.results[curr_row].x[7], 'E(B-V)_cool_err_lo' : self.errorsallrows[curr_row][7][0], 'E(B-V)_cool_err_hi' : self.errorsallrows[curr_row][7][1], 'R_hot' : self.rsol_list[curr_row][0], 'R_hot_err_lo' : self.rsol_list[curr_row][1], 'R_hot_err_hi' : self.rsol_list[curr_row][2], 'R_cool' : self.rsol_list[curr_row][3], 'R_cool_err_lo' : self.rsol_list[curr_row][4], 'R_cool_err_hi' : self.rsol_list[curr_row][5]}
-                    chiparamsdf = chiparamsdf.append(rowdict,ignore_index=True)
-                for curr_row in range(self.bandfluxes.shape[0]):
-                    chiparamsdf = chiparamsdf.rename(index={curr_row:"Source at row {}".format(self.rows[curr_row]+2)})
-                try:
-                    chiparamsdf.to_csv("{}".format(self.chifilename))
-                except:
-                    import tkinter as tk
-                    from tkinter import messagebox
-                    tk.messagebox.showerror('Error','An error occurred. Sometimes this can happen when trying to overwrite a file. Please remove output files from the program folder and try again.')         
-            
+
+                    a = pd.DataFrame({
+                        'log(g_hot)' : self.g1grid.flatten(),
+                        'temperature_hot/10000' : self.T1grid.flatten(),
+                        'abundance_hot' : self.Z1grid.flatten(),
+                        'theta_r_hot/1e-12' : self.gridThetar1s[curr_row],
+                        'E(B-V)_hot' : self.ebv1grid.flatten(),
+                        'temperature_cool/10000' : self.T2grid.flatten(),
+                        'theta_r_cool/1e-12' : self.gridThetar2s[curr_row],
+                        'E(B-V)_cool' : self.ebv2grid.flatten(),
+                        'Chi squared' : self.gridChisqs[curr_row]})
+                    
+                    parts = self.gridname.split(".")
+                    numbered_gridname = parts[0] + str(self.rows[curr_row]+2) + "." + parts[1]
+
+                    a.to_csv("{}".format(numbered_gridname),index=False)
+ 
     def display_results_single(self,curr_row):
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
@@ -1334,15 +1435,15 @@ class ChiSquared():
             valid_actualfilters_this_row.append(self.filternames[valid_ind])
     
 
-        fig = Figure(figsize=(10.5,6))
+        fig = Figure(figsize=(8.75,5))
         abc = fig.add_subplot(111)
-        best_tup = (self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4])
         abc.scatter(valid_avgwv_this_row,valid_fluxes_this_row,color="orange")
         abc.set_xlabel("Wavelength [nm]")
         abc.set_ylabel("Flux [mJy]")
         abc.set_title("Source at row {}".format(self.rows[curr_row]+2))
-        abc.errorbar(valid_avgwv_this_row,valid_fluxes_this_row,yerr=valid_errors_this_row,fmt="o",color="orange")
-        abc.plot(valid_avgwv_this_row,self.minichisqfunc_single(best_tup,valid_filters_this_row),color="blue")
+        #abc.errorbar(valid_avgwv_this_row,valid_fluxes_this_row,yerr=valid_errors_this_row,fmt="o",color="orange")
+        mean_chi2, mean_models = self.minichisqfunc_single(self.mean_theta_r1s[curr_row]*self.mean_theta_r1s[curr_row],self.mean_g1s[curr_row],self.mean_T1s[curr_row],self.mean_Z1s[curr_row],self.mean_ebv1s[curr_row],valid_filters_this_row,curr_row)
+        abc.plot(valid_avgwv_this_row,mean_models,color="blue")
 
         if self.saveplots == 1:
             saveimgname = self.imgfilename.replace("X","{}".format(self.rows[curr_row]+2))
@@ -1379,23 +1480,28 @@ class ChiSquared():
         label4 = tk.Label(topw,text="Model fluxes (y, blue):")
         label4.place(x=50,y=620)
         textbox4 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(valid_actualfilters_this_row,self.minichisqfunc_single(best_tup,valid_filters_this_row)):
+        self.mean_fluxes.append(0)
+        for filtername,mod in zip(valid_actualfilters_this_row,mean_models):
+            self.mean_fluxes[curr_row] += mod
             textbox4.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
+        print("total model flux using weighted mean parameters: {}".format(self.mean_fluxes[curr_row]))
         textbox4.place(x=50,y=650)
         groove = tk.Canvas(topw,width=185,height=120,bd=4,relief=tk.RIDGE)
         groove.place(x=405,y=655)
-        label5 = tk.Label(topw,text="Lowest chi^2 value")
+        label5 = tk.Label(topw,text="chi^2 value using weighted mean parameters")
         label5.place(x=425,y=665)
-        label5a = tk.Label(topw,text="{}".format(format(self.results[curr_row].fun,'.6e')),font=("Arial",12))
+        label5a = tk.Label(topw,text="{}".format(format(mean_chi2,'.6e')),font=("Arial",12))
         label5a.place(x=437,y=715)
         ridge = tk.Canvas(topw,width=600,height=300,bd=4,relief=tk.GROOVE)
         ridge.place(x=875,y=630)
+        self.mean_chi2s.append(0)
+        self.mean_chi2s[curr_row] = mean_chi2
         #label6 = tk.Label(topw,text="Best fit parameters",pady=15)
         #label6.place(x=865,y=725)
         labelheader = tk.Label(topw,text="Parameter                        Best fit value            Error_lower             Error_upper",bd=4,relief=tk.GROOVE,padx=40,bg="azure")
         labelheader.place(x=878,y=603) 
         import math
-        log_g_sticker1 = format(self.results[curr_row].x[0],'.6e')
+        log_g_sticker1 = format(self.mean_g1s[curr_row],'.6e')
         try:
             log_g_sticker2 = format(self.errorsallrows[curr_row][0][0],'.6e')
         except:
@@ -1407,7 +1513,7 @@ class ChiSquared():
         label7 = tk.Label(topw,text="log_g                  =             {}        ({})        ({})".format(log_g_sticker1,log_g_sticker2,log_g_sticker3))
         label7.place(x=910,y=648)
 
-        temp_sticker1 = format(self.results[curr_row].x[1]*10000,'.6e')
+        temp_sticker1 = format(self.mean_T1s[curr_row]*10000,'.6e')
         try:
             temp_sticker2 = format(self.errorsallrows[curr_row][1][0],'.6e')
         except:
@@ -1419,7 +1525,7 @@ class ChiSquared():
         label8= tk.Label(topw,text = "temperature       =             {}        ({})        ({})".format(temp_sticker1,temp_sticker2,temp_sticker3))
         label8.place(x=910,y=683)
 
-        abundance_sticker1 = format(self.results[curr_row].x[2],'.6e')
+        abundance_sticker1 = format(self.mean_Z1s[curr_row],'.6e')
         try:
             abundance_sticker2 = format(self.errorsallrows[curr_row][2][0],'.6')
         except:
@@ -1431,7 +1537,7 @@ class ChiSquared():
         label9 = tk.Label(topw, text = "abundance         =              {}        ({})        ({})".format(abundance_sticker1,abundance_sticker2,abundance_sticker3))
         label9.place(x=910,y=718)
 
-        theta_r_sticker1 = format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.6e')
+        theta_r_sticker1 = format(self.mean_theta_r1s[curr_row]*1e-12,'.6e')
         try:
             theta_r_sticker2 = format(self.errorsallrows[curr_row][3][0],'.6e')
         except:
@@ -1443,7 +1549,7 @@ class ChiSquared():
         label10 = tk.Label(topw,text="theta_r                =              {}        ({})        ({})".format(theta_r_sticker1,theta_r_sticker2,theta_r_sticker3))
         label10.place(x=910,y=753)
 
-        ebv_sticker1 = format(self.results[curr_row].x[4],'.6e')
+        ebv_sticker1 = format(self.mean_ebv1s[curr_row],'.6e')
         try:
             ebv_sticker2 = format(self.errorsallrows[curr_row][4][0],'.6e')
         except:
@@ -1454,33 +1560,6 @@ class ChiSquared():
             ebv_sticker3 = "       N/A       "
         label11 = tk.Label(topw,text="E(b-v)                 =              {}        ({})        ({})".format(ebv_sticker1,ebv_sticker2,ebv_sticker3))
         label11.place(x=910,y=788)
-
-        r_sol_canvas = tk.Canvas(topw,height=250,width=221,bd=3,relief=tk.RIDGE)
-        r_sol_canvas.place(x=622,y=630)        
-        labelheader = tk.Label(topw,text="Stellar radii",bd=4,relief=tk.GROOVE,padx=72,bg="lemon chiffon")
-        labelheader.place(x=625,y=603) 
-        
-        if self.disttostar != "N":
-
-            try:
-                label15sticker = format(self.rsol_list[curr_row][0],'.6e')
-            except:
-                label15sticker = "       N/A       "
-            try:
-                label16sticker = format(self.rsol_list[curr_row][1],'.6e')
-            except:
-                label16sticker = "       N/A       "
-            try:
-                label17sticker = format(self.rsol_list[curr_row][2],'.6e')
-            except:
-                label17sticker = "       N/A       "
-
-            label15 = tk.Label(topw,text="R              =    {}".format(label15sticker))
-            label15.place(x=640,y=647)
-            label16 = tk.Label(topw,text="R_err_lo   =    {}".format(label16sticker))
-            label16.place(x=640,y=687)
-            label17 = tk.Label(topw,text="R_err_hi   =    {}".format(label17sticker))
-            label17.place(x=640,y=727)
 
         def closethesource():
             topw.destroy()
@@ -1525,19 +1604,17 @@ class ChiSquared():
             valid_actualfilters_this_row.append(self.filternames[valid_ind])
     
 
-        fig = Figure(figsize=(10.5,6))
+        fig = Figure(figsize=(8.75,5))
         abc = fig.add_subplot(111)
-        best_tup = (self.results[curr_row].x[0],self.results[curr_row].x[1],self.results[curr_row].x[2],self.results[curr_row].x[3],self.results[curr_row].x[4],self.results[curr_row].x[5],self.results[curr_row].x[6],self.results[curr_row].x[7])
         abc.scatter(valid_avgwv_this_row,valid_fluxes_this_row,color="orange")
         abc.set_xlabel("Wavelength [nm]")
         abc.set_ylabel("Flux [mJy]")
         abc.set_title("Source at row {}".format(self.rows[curr_row]+2))
-        abc.errorbar(valid_avgwv_this_row,valid_fluxes_this_row,yerr=valid_errors_this_row,fmt="o",color="orange")
-        hotmod = self.minichisqfunc_double(best_tup,valid_filters_this_row)[0]
-        coolmod = self.minichisqfunc_double(best_tup,valid_filters_this_row)[1]
-        abc.plot(valid_avgwv_this_row,hotmod,color="red")
-        abc.plot(valid_avgwv_this_row,coolmod,color="blue")
-        sumofmodels = [hotmod[i] + coolmod[i] for i in range(len(hotmod))]
+        #abc.errorbar(valid_avgwv_this_row,valid_fluxes_this_row,yerr=valid_errors_this_row,fmt="o",color="orange")
+        mean_chi2, hotmodels, coolmodels = self.minichisqfunc_double(self.mean_theta_r1s[curr_row]*self.mean_theta_r1s[curr_row], self.mean_theta_r2s[curr_row]*self.mean_theta_r2s[curr_row], self.mean_g1s[curr_row],self.mean_T1s[curr_row],self.mean_Z1s[curr_row],self.mean_ebv1s[curr_row],self.mean_T2s[curr_row],self.mean_ebv2s[curr_row],valid_filters_this_row,curr_row)
+        abc.plot(valid_avgwv_this_row,hotmodels,color="red")
+        abc.plot(valid_avgwv_this_row,coolmodels,color="blue")
+        sumofmodels = [hotmodels[i] + coolmodels[i] for i in range(len(hotmodels))]
         abc.plot(valid_avgwv_this_row,sumofmodels,color="limegreen")
 
         if self.saveplots == 1:
@@ -1575,29 +1652,37 @@ class ChiSquared():
         label4 = tk.Label(topw,text="Hot star model fluxes (y, red):")
         label4.place(x=50,y=545)
         textbox4 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(valid_actualfilters_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[0]):
-            textbox4.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
+        self.mean_hotfluxes.append(0)
+        for filtername,hotmod in zip(valid_actualfilters_this_row,hotmodels):
+            self.mean_hotfluxes[curr_row] += hotmod
+            textbox4.insert(tk.END,"{}      {}\n".format(filtername,format(hotmod,'.8e')))
+        print("total hot model flux using weighted mean parameters: {}".format(self.mean_hotfluxes[curr_row]))
         textbox4.place(x=50,y=575)
         label5 = tk.Label(topw,text="Cool star model fluxes (y, blue):")
         label5.place(x=50,y=720)
         textbox5 = tk.Text(topw,height=6,width=30)
-        for filtername,mod in zip(valid_actualfilters_this_row,self.minichisqfunc_double(best_tup,valid_filters_this_row)[1]):
-            textbox5.insert(tk.END,"{}      {}\n".format(filtername,format(mod,'.8e')))
+        self.mean_coolfluxes.append(0)
+        for filtername,coolmod in zip(valid_actualfilters_this_row,coolmodels):
+            self.mean_coolfluxes[curr_row] += coolmod
+            textbox5.insert(tk.END,"{}      {}\n".format(filtername,format(coolmod,'.8e')))
+        print("total cool model flux using weighted mean parameters: {}".format(self.mean_coolfluxes[curr_row]))
         textbox5.place(x=50,y=750)
         groove = tk.Canvas(topw,width=185,height=120,bd=4,relief=tk.RIDGE)
         groove.place(x=405,y=655)
-        label5 = tk.Label(topw,text="Lowest chi^2 value")
+        label5 = tk.Label(topw,text="chi^2 value using weighted mean parameters")
         label5.place(x=425,y=665)
-        label5a = tk.Label(topw,text="{}".format(format(self.results[curr_row].fun,'.6e')),font=("Arial",12))
+        label5a = tk.Label(topw,text="{}".format(format(mean_chi2,'.6e')),font=("Arial",12))
         label5a.place(x=437,y=715)
         ridge = tk.Canvas(topw,width=600,height=300,bd=4,relief=tk.GROOVE)
         ridge.place(x=875,y=630)
+        self.mean_chi2s.append(0)
+        self.mean_chi2s[curr_row] = mean_chi2
         #label6 = tk.Label(topw,text="Best fit parameters",pady=15)
         #label6.place(x=865,y=725)
         labelheader = tk.Label(topw,text="Parameter                        Best fit value            Error_lower             Error_upper",bd=4,relief=tk.GROOVE,padx=40,bg="azure")
         labelheader.place(x=878,y=603) 
         import math
-        log_g_hot_sticker1 = format(self.results[curr_row].x[0],'.6e')
+        log_g_hot_sticker1 = format(self.mean_g1s[curr_row],'.6e')
         try:
             log_g_hot_sticker2 = format(self.errorsallrows[curr_row][0][0],'.6e')
         except:
@@ -1609,7 +1694,7 @@ class ChiSquared():
         label7 = tk.Label(topw,text="log_g_hot                  =     {}        ({})        ({})".format(log_g_hot_sticker1,log_g_hot_sticker2,log_g_hot_sticker3))
         label7.place(x=910,y=648)
 
-        temp_hot_sticker1 = format(self.results[curr_row].x[1]*10000,'.6e')
+        temp_hot_sticker1 = format(self.mean_T1s[curr_row]*10000,'.6e')
         try:
             temp_hot_sticker2 = format(self.errorsallrows[curr_row][1][0],'.6e')
         except:
@@ -1621,7 +1706,7 @@ class ChiSquared():
         label8= tk.Label(topw,text = "temperature_hot       =     {}        ({})        ({})".format(temp_hot_sticker1,temp_hot_sticker2,temp_hot_sticker3))
         label8.place(x=910,y=678)
 
-        abundance_hot_sticker1 = format(self.results[curr_row].x[2],'.6e')
+        abundance_hot_sticker1 = format(self.mean_Z1s[curr_row],'.6e')
         try:
             abundance_hot_sticker2 = format(self.errorsallrows[curr_row][2][0],'.6')
         except:
@@ -1633,7 +1718,7 @@ class ChiSquared():
         label9 = tk.Label(topw, text = "abundance_hot         =      {}        ({})        ({})".format(abundance_hot_sticker1,abundance_hot_sticker2,abundance_hot_sticker3))
         label9.place(x=910,y=708)
 
-        theta_r_hot_sticker1 = format(math.sqrt(self.results[curr_row].x[3])*10**(-12),'.6e')
+        theta_r_hot_sticker1 = format(self.mean_theta_r1s[curr_row]*1e-12,'.6e')
         try:
             theta_r_hot_sticker2 = format(self.errorsallrows[curr_row][3][0],'.6e')
         except:
@@ -1645,7 +1730,7 @@ class ChiSquared():
         label10 = tk.Label(topw,text="theta_r_hot                =      {}        ({})        ({})".format(theta_r_hot_sticker1,theta_r_hot_sticker2,theta_r_hot_sticker3))
         label10.place(x=910,y=738)
 
-        ebv_hot_sticker1 = format(self.results[curr_row].x[4],'.6e')
+        ebv_hot_sticker1 = format(self.mean_ebv1s[curr_row],'.6e')
         try:
             ebv_hot_sticker2 = format(self.errorsallrows[curr_row][4][0],'.6e')
         except:
@@ -1657,7 +1742,7 @@ class ChiSquared():
         label11 = tk.Label(topw,text="E(b-v)_hot                 =      {}        ({})        ({})".format(ebv_hot_sticker1,ebv_hot_sticker2,ebv_hot_sticker3))
         label11.place(x=910,y=768)
 
-        temp_cool_sticker1 = format(self.results[curr_row].x[5]*10000,'.6e')
+        temp_cool_sticker1 = format(self.mean_T2s[curr_row]*10000,'.6e')
         try:
             temp_cool_sticker2 = format(self.errorsallrows[curr_row][5][0],'.6e')
         except:
@@ -1669,7 +1754,7 @@ class ChiSquared():
         label12 = tk.Label(topw,text="temperature_cool     =      {}        ({})        ({})".format(temp_cool_sticker1,temp_cool_sticker2,temp_cool_sticker3))
         label12.place(x=910,y=798)
 
-        theta_r_cool_sticker1 = format(math.sqrt(self.results[curr_row].x[6])*10**(-12),'.6e')
+        theta_r_cool_sticker1 = format(self.mean_theta_r2s[curr_row]*1e-12,'.6e')
         try:
             theta_r_cool_sticker2 = format(self.errorsallrows[curr_row][6][0],'.6e')
         except:
@@ -1681,7 +1766,7 @@ class ChiSquared():
         label13 = tk.Label(topw,text="theta_r_cool              =      {}        ({})        ({})".format(theta_r_cool_sticker1,theta_r_cool_sticker2,theta_r_cool_sticker3))
         label13.place(x=910,y=828)
 
-        ebv_cool_sticker1 = format(self.results[curr_row].x[7],'.6e')
+        ebv_cool_sticker1 = format(self.mean_ebv2s[curr_row],'.6e')
         try:
             ebv_cool_sticker2 = format(self.errorsallrows[curr_row][7][0],'.6e')
         except:
@@ -1692,50 +1777,6 @@ class ChiSquared():
             ebv_cool_sticker3 = "       N/A       "
         label14 = tk.Label(topw,text="E(b-v)_cool               =      {}        ({})        ({})".format(ebv_cool_sticker1,ebv_cool_sticker2,ebv_cool_sticker3))
         label14.place(x=910,y=858)
-
-        r_sol_canvas = tk.Canvas(topw,height=250,width=221,bd=3,relief=tk.RIDGE)
-        r_sol_canvas.place(x=622,y=630)
-        labelheader = tk.Label(topw,text="Stellar radii",bd=4,relief=tk.GROOVE,padx=72,bg="lemon chiffon")
-        labelheader.place(x=625,y=603) 
-
-        if self.disttostar != "N":
-
-            try:
-                label15sticker = format(self.rsol_list[curr_row][0],'.6e')
-            except:
-                label15sticker = "       N/A       "
-            try:
-                label16sticker = format(self.rsol_list[curr_row][1],'.6e')
-            except:
-                label16sticker = "       N/A       "
-            try:
-                label17sticker = format(self.rsol_list[curr_row][2],'.6e')
-            except:
-                label17sticker = "       N/A       "
-            try:
-                label18sticker = format(self.rsol_list[curr_row][3],'.6e')
-            except:
-                label18sticker = "       N/A       "
-            try:
-                label19sticker = format(self.rsol_list[curr_row][4],'.6e')
-            except:
-                label19sticker = "       N/A       "
-            try:
-                label20sticker = format(self.rsol_list[curr_row][5],'.6e')
-            except:
-                label20sticker = "       N/A       "
-            label15 = tk.Label(topw,text="R_hot              =  {}".format(label15sticker))
-            label15.place(x=635,y=647)
-            label16 = tk.Label(topw,text="R_hot_err_lo   =  {}".format(label16sticker))
-            label16.place(x=635,y=687)
-            label17 = tk.Label(topw,text="R_hot_err_hi   =  {}".format(label17sticker))
-            label17.place(x=635,y=727)
-            label18 = tk.Label(topw,text="R_cool            =  {}".format(label18sticker))
-            label18.place(x=635,y=767)
-            label19 = tk.Label(topw,text="R_cool_err_lo  =  {}".format(label19sticker))
-            label19.place(x=635,y=807)
-            label20 = tk.Label(topw,text="R_cool_err_hi  =  {}".format(label20sticker))
-            label20.place(x=635,y=847)
 
         def closethesource():
             topw.destroy()
