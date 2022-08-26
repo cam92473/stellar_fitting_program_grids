@@ -1,2 +1,2 @@
 row,weighted_mean_log(g1),sigma_log(g1),weighted_mean_T1/10000,sigma_T1/10000,weighted_mean_Z1,sigma_Z1,weighted_mean_theta_r1,sigma_theta_r1,weighted_mean_ebv1,sigma_ebv1,weighted_mean_T2/10000,sigma_T2/10000,weighted_mean_theta_r2,sigma_theta_r2,weighted_mean_ebv2,sigma_ebv2,chi2_using_mean_parameters,fitted_theta_r1_to_mean_parameters,fitted_theta_r2_to_mean_parameters,chi2_of_fitted_thetas
-2,3.5,0.0,0.65,0.0,-2.5,0.0,2.7527342817538627,0.0,0.07,0.0,0.35,0.30000000000000004,0.17320508075688773,0.0,0.07,0.0,918287.1306236048,2.7527342810718745,0.17320508075688773,918287.1306236048
+2,,,,,,,,,,,,,,,,,,,,

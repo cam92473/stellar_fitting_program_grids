@@ -15,8 +15,10 @@ class ChiSquared():
         self.checker4set = 1
         self.checker5set = 0
         self.slidervalset = 0
+        self.sliderval2set = 0
         self.rownumberset = ""
         self.sliderstringset = "log-log axes"
+        self.sliderstring2set = "optimizer"
         self.model_chosen_set = "UVIT_HST"
         self.ulmethset = "Standard"
         self.starlist1 = ["0.03","30","N/A","N/A"]
@@ -132,6 +134,7 @@ class ChiSquared():
                                     self.gridresults = checker3.get()
                                     self.saveplots = checker4.get()
                                     self.plotscale = currentsliderval.get()
+                                    self.solvemethod = currentsliderval2.get()
                                     self.checker1set = checker1.get()
                                     self.checker2set = checker2.get()
                                     self.checker3set = checker3.get()
@@ -141,6 +144,8 @@ class ChiSquared():
                                     self.checked2set = checked2.get()
                                     self.slidervalset = currentsliderval.get()
                                     self.sliderstringset = sliderstring.get()
+                                    self.sliderval2set = currentsliderval2.get()
+                                    self.sliderstring2set = sliderstring2.get()
 
                                     self.model_chosen = user_model_cho.get()
                                     self.model_chosen_set = user_model_cho.get()
@@ -386,6 +391,11 @@ class ChiSquared():
         sliderstring = tk.StringVar()
         currentsliderval = tk.IntVar()
         currentsliderval.set(self.slidervalset)
+        sliderstring.set(self.sliderstringset)
+        sliderstring2 = tk.StringVar()
+        currentsliderval2 = tk.IntVar()
+        currentsliderval2.set(self.sliderval2set)
+        sliderstring2.set(self.sliderstring2set)
         weightedmeanvarname = tk.StringVar()
         gridname = tk.StringVar()
         imgname = tk.StringVar()
@@ -395,6 +405,11 @@ class ChiSquared():
                 sliderstring.set(" linear axes  ")
             elif currentsliderval.get() == 0:
                 sliderstring.set("log-log axes")
+        def changesliderstring2(useless):
+            if currentsliderval2.get() == 1:
+                sliderstring2.set("  analytic ")
+            elif currentsliderval2.get() == 0:
+                sliderstring2.set("optimizer")
         
         def grent1():
             if plotslider['state'] == tk.NORMAL:
@@ -431,10 +446,9 @@ class ChiSquared():
                 buttentry4['state'] = tk.NORMAL
                 buttentry4.insert(tk.END,"plot_so_rowX.png")
                 
-        checkbutt1 = tk.Checkbutton(mwin,text="Display results",variable=checker1,command=grent1,bg='azure2')
         plotslider = tk.Scale(mwin,from_=0,to=1,orient=tk.HORIZONTAL,showvalue=0,length=65,width=25,variable=currentsliderval, command=changesliderstring)
         plotslider.place(x=470,y=165)
-        grayframe= tk.Frame(mwin,bg="gray95",bd=3)
+        grayframe = tk.Frame(mwin,bg="gray95",bd=3)
         grayframe.place(x=350,y=165)
         sliderlabel = tk.Label(grayframe,textvariable=sliderstring,padx=5,bg='white')
         sliderlabel.pack()
@@ -442,27 +456,40 @@ class ChiSquared():
             plotslider.set(0)
         if currentsliderval == 1:
             plotslider.set(1)
+        solvelabel = tk.Label(mwin,text="Solve method",bg='alice blue')
+        solvelabel.place(x=40,y=170)
+        plotslider2 = tk.Scale(mwin,from_=0,to=1,orient=tk.HORIZONTAL,showvalue=0,length=65,width=25,variable=currentsliderval2, command=changesliderstring2)
+        plotslider2.place(x=40,y=205)
+        grayframe2 = tk.Frame(mwin,bg="gray95",bd=3)
+        grayframe2.place(x=120,y=205)
+        sliderlabel2 = tk.Label(grayframe2,textvariable=sliderstring2,padx=5,bg='white')
+        sliderlabel2.pack()
+        if currentsliderval2.get() == 0:
+            plotslider2.set(0)
+        if currentsliderval2 == 1:
+            plotslider2.set(1)
+        checkbutt1 = tk.Checkbutton(mwin,text="Display results",variable=checker1,command=grent1,bg='azure2')
         checkbutt2 = tk.Checkbutton(mwin,text="Save weighted mean and variance data",variable=checker2,command=grent2,bg='azure2')
         checkbutt3 = tk.Checkbutton(mwin,text="Save parameter grids",variable=checker3,command=grent3,bg='azure2')
         checkbutt4 = tk.Checkbutton(mwin,text="Save plot images (1 per source X)",variable=checker4,command=grent4,bg='azure2')
         checkbutt5 = tk.Checkbutton(mwin,text="Run silently",variable=checker5,bg='alice blue')
+        checkbutt1.place(x=340,y=130)
+        checkbutt2.place(x=340,y=220)
+        checkbutt3.place(x=340,y=290)
+        checkbutt4.place(x=340,y=360)
+        checkbutt5.place(x=1020,y=35)
         buttentry2 = tk.Entry(mwin, textvariable = weightedmeanvarname, width=26)
         buttentry3 = tk.Entry(mwin, textvariable = gridname,width=26)
         buttentry4 = tk.Entry(mwin,textvariable = imgname,width=26)
+        buttentry2.place(x=345,y=250)
+        buttentry3.place(x=345,y=320)
+        buttentry4.place(x=345,y=390)
         if checker2.get() == 0:
             buttentry2['state'] = tk.DISABLED
         if checker3.get() == 0:
             buttentry3['state'] = tk.DISABLED
         if checker4.get() == 0:
             buttentry4['state'] = tk.DISABLED
-        checkbutt1.place(x=340,y=130)
-        checkbutt2.place(x=340,y=220)
-        checkbutt3.place(x=340,y=290)
-        checkbutt4.place(x=340,y=360)
-        checkbutt5.place(x=1020,y=35)
-        buttentry2.place(x=345,y=250)
-        buttentry3.place(x=345,y=320)
-        buttentry4.place(x=345,y=390)
 
         user_g1lowest = tk.DoubleVar()
         user_g1highest = tk.DoubleVar()
@@ -903,7 +930,6 @@ class ChiSquared():
         
         return new_chi2
 
-
     def chisqfunc(self,theta_r1_sq,g1,T1,Z1,ebv1,valid_filters_this_row,curr_row):
         if self.silent is False:
             print("Testing row {} with grid log(g1), grid T1/10000, grid Z1, theta_r1_sq/1e-24, grid ebv1: ".format(self.rows[curr_row]+2), g1,T1,Z1,theta_r1_sq,ebv1)
@@ -923,6 +949,39 @@ class ChiSquared():
             print("chisq: ",chisq,"\n")
 
         return chisq
+
+    def analyticfunc(self,g1,T1,Z1,ebv1,valid_filters_this_row,curr_row):
+
+        if self.silent is False:
+            print("Finding theta_r_sq/1e-24 analytically for row {} with grid log(g1), grid T1/10000, grid Z1, grid ebv1: ".format(self.rows[curr_row]+2), g1,T1,Z1,ebv1)
+
+        modelsnoThetarsq = []
+        interpolist = self.interpolate(g1,10000*T1,Z1,valid_filters_this_row)
+        extinctolist = self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            modelsnoThetarsq.append(interpolist[i]*10**(-0.4*(ebv1*(extinctolist[i]+3.001))))
+
+        Tf1summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tf1summands.append((self.bandfluxes.iat[curr_row,valid_ind]*modelsnoThetarsq[i])/(self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+        Tf1 = sum(Tf1summands)
+
+        Tm11summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tm11summands.append((modelsnoThetarsq[i]/(self.bandfluxerrors.iat[curr_row,valid_ind]))**2)
+        Tm11 = sum(Tm11summands)
+
+        thetarsq = Tf1/Tm11*1e24
+
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - thetarsq*modelsnoThetarsq[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        chisq = sum(summands)
+        if self.silent is False:
+            print("theta_r_sq/1e-24, chisq: ",thetarsq,chisq,"\n")
+
+        return thetarsq,chisq
 
     def chisqfunc2(self,tup,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
         theta_r1_sq,theta_r2_sq = tup
@@ -948,6 +1007,73 @@ class ChiSquared():
         if self.silent is False:
             print("chisq: ",chisq,"\n")
         return chisq
+
+    def analyticfunc2(self,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
+        from scipy.linalg import solve
+        import numpy as np
+
+        if self.silent is False:
+            print("Finding theta_r1_sq/1e-24 and theta_r2_sq/1e-24 analytically for row {} with grid log(g1), grid T1/10000, grid Z1, grid E_bv1, grid T2/10000, grid E_bv2: ".format(self.rows[curr_row]+2), g1, T1, Z1, ebv1, T2, ebv2)
+
+        models1noThetarsq = []
+        interpolist1 = self.interpolate(g1,T1*10000,Z1,valid_filters_this_row)
+        extinctolist1 =self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            models1noThetarsq.append(interpolist1[i]*10**(-0.4*(ebv1*(extinctolist1[i]+3.001))))
+        models2noThetarsq = []
+        interpolist2 = self.interpolate(2.5,T2*10000,-1.5,valid_filters_this_row)
+        extinctolist2 = self.extinction(valid_filters_this_row)
+        for i in range(len(valid_filters_this_row)):
+            models2noThetarsq.append(interpolist2[i]*10**(-0.4*(ebv2*(extinctolist2[i]+3.001))))
+
+        Tf1summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tf1summands.append((self.bandfluxes.iat[curr_row,valid_ind]*models1noThetarsq[i])/(self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+        Tf1 = sum(Tf1summands)
+
+        Tf2summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tf2summands.append((self.bandfluxes.iat[curr_row,valid_ind]*models2noThetarsq[i])/(self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+        Tf2 = sum(Tf2summands)
+
+        Tm11summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tm11summands.append((models1noThetarsq[i]/(self.bandfluxerrors.iat[curr_row,valid_ind]))**2)
+        Tm11 = sum(Tm11summands)
+
+        Tm12summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tm12summands.append((models1noThetarsq[i]*models2noThetarsq[i])/(self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+        Tm12 = sum(Tm12summands)
+
+        Tm22summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            Tm22summands.append((models2noThetarsq[i]/(self.bandfluxerrors.iat[curr_row,valid_ind]))**2)
+        Tm22 = sum(Tm11summands)
+
+        Tm = np.array([[Tm11,Tm12],[Tm12,Tm22]])
+        Tf = np.array([Tf1,Tf2])
+
+        Thetarsq = solve(Tm,Tf)
+
+        if Thetarsq[0] <= 0:
+            theta_r1_sq = 0
+            theta_r2_sq = Tf2/Tm22*1e24
+        elif Thetarsq[1] <= 0:
+            theta_r1_sq = Tf1/Tm11*1e24
+            theta_r2_sq = 0
+        else:
+            theta_r1_sq = Thetarsq[0]*1e24
+            theta_r2_sq = Thetarsq[1]*1e24
+
+        summands = []
+        for i,valid_ind in enumerate(valid_filters_this_row):
+            summands.append(((self.bandfluxes.iat[curr_row,valid_ind] - theta_r1_sq*models1noThetarsq[i] - theta_r2_sq*models2noThetarsq[i])/self.bandfluxerrors.iat[curr_row,valid_ind])**2)
+
+        chisq = sum(summands)
+        if self.silent is False:
+            print("theta_r1_sq/1e-24, theta_r2_sq/1e-24, chisq: ",theta_r1_sq,theta_r2_sq,chisq,"\n")
+        return theta_r1_sq,theta_r2_sq,chisq
 
     def chisqfuncerror(self,theta_r_sq,mean_chi2,g,T,Z,E_bv,valid_filters_this_row,curr_row):
 
@@ -1059,14 +1185,14 @@ class ChiSquared():
                                 T1 = self.T1grid[i,j,k,l]
                                 Z1 = self.Z1grid[i,j,k,l]
                                 ebv1 = self.ebv1grid[i,j,k,l]
-                                res = opt.minimize(self.chisqfunc, x0, args=(g1,T1,Z1,ebv1,valid_filters_this_row,curr_row,), bounds=bnds)
-                                chi2 = res.fun
-                                theta_r1 = sqrt(res.x[0])
+                                if self.solvemethod == 0:
+                                    res = opt.minimize(self.chisqfunc, x0, args=(g1,T1,Z1,ebv1,valid_filters_this_row,curr_row,), bounds=bnds)
+                                    chi2 = res.fun
+                                    theta_r1 = sqrt(res.x[0])
+                                elif self.solvemethod == 1:
+                                    theta_r1, chi2 = self.analyticfunc(g1,T1,Z1,ebv1,valid_filters_this_row,curr_row)
                                 gridChisq[i,j,k,l] = chi2
-                                print("optimized chi2: ",chi2)
                                 gridThetar[i,j,k,l] = theta_r1
-                                print("optimized theta_r1/1e-12: ",theta_r1)
-                                print("\n")
                                 if chi2 < smallest_chi2:
                                     smallest_chi2 = chi2
                                     smallest_chi2_params[0] = g1
@@ -1251,17 +1377,16 @@ class ChiSquared():
                                         ebv1 = self.ebv1grid[i,j,k,l,m,n]
                                         T2 = self.T2grid[i,j,k,l,m,n]
                                         ebv2 = self.ebv2grid[i,j,k,l,m,n]
-                                        res = opt.minimize(self.chisqfunc2, x0, args=(g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row,), bounds=bnds)
-                                        chi2 = res.fun
-                                        theta_r1 = sqrt(res.x[0])
-                                        theta_r2 = sqrt(res.x[1])
+                                        if self.solvemethod == 0:
+                                            res = opt.minimize(self.chisqfunc2, x0, args=(g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row,), bounds=bnds)
+                                            chi2 = res.fun
+                                            theta_r1 = sqrt(res.x[0])
+                                            theta_r2 = sqrt(res.x[1])
+                                        elif self.solvemethod == 1:
+                                            theta_r1, theta_r2, chi2 = self.analyticfunc2(g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row)
                                         gridChisq[i,j,k,l,m,n] = chi2
-                                        print("optimized chi2: ",chi2)
                                         gridThetar1[i,j,k,l,m,n] = theta_r1
                                         gridThetar2[i,j,k,l,m,n] = theta_r2
-                                        print("optimized theta_r1/1e-12: ",theta_r1)
-                                        print("optimized theta_r2/1e-12: ",theta_r2)
-                                        print("\n")
                                         if chi2 < smallest_chi2:
                                             smallest_chi2 = chi2
                                             smallest_chi2_params[0] = g1
