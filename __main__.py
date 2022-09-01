@@ -971,7 +971,7 @@ class ChiSquared():
             Tm11summands.append((modelsnoThetarsq[i]/(self.bandfluxerrors.iat[curr_row,valid_ind]))**2)
         Tm11 = sum(Tm11summands)
 
-        thetarsq = Tf1/Tm11*1e24
+        thetarsq = Tf1/Tm11
 
         summands = []
         for i,valid_ind in enumerate(valid_filters_this_row):
@@ -979,9 +979,9 @@ class ChiSquared():
 
         chisq = sum(summands)
         if self.silent is False:
-            print("theta_r_sq/1e-24, chisq: ",thetarsq,chisq,"\n")
+            print("theta_r_sq/1e-24, chisq: ",thetarsq*1e24,chisq,"\n")
 
-        return thetarsq,chisq
+        return thetarsq*1e24,chisq
 
     def chisqfunc2(self,tup,g1,T1,Z1,ebv1,T2,ebv2,valid_filters_this_row,curr_row):
         theta_r1_sq,theta_r2_sq = tup
@@ -1054,17 +1054,16 @@ class ChiSquared():
         Tm = np.array([[Tm11,Tm12],[Tm12,Tm22]])
         Tf = np.array([Tf1,Tf2])
 
-        Thetarsq = solve(Tm,Tf)
+        Thetarsq_vector = solve(Tm,Tf)
+        theta_r1_sq = Thetarsq_vector[0]*1e24
+        theta_r2_sq = Thetarsq_vector[1]*1e24
 
-        if Thetarsq[0] <= 0:
+        if theta_r1_sq <= 0:
             theta_r1_sq = 0
-            theta_r2_sq = Tf2/Tm22*1e24
-        elif Thetarsq[1] <= 0:
-            theta_r1_sq = Tf1/Tm11*1e24
+            theta_r2_sq = Tf2/Tm22
+        elif theta_r2_sq <= 0:
+            theta_r1_sq = Tf1/Tm11
             theta_r2_sq = 0
-        else:
-            theta_r1_sq = Thetarsq[0]*1e24
-            theta_r2_sq = Thetarsq[1]*1e24
 
         summands = []
         for i,valid_ind in enumerate(valid_filters_this_row):
@@ -1072,8 +1071,8 @@ class ChiSquared():
 
         chisq = sum(summands)
         if self.silent is False:
-            print("theta_r1_sq/1e-24, theta_r2_sq/1e-24, chisq: ",theta_r1_sq,theta_r2_sq,chisq,"\n")
-        return theta_r1_sq,theta_r2_sq,chisq
+            print("theta_r1_sq/1e-24, theta_r2_sq/1e-24, chisq: ",theta_r1_sq*1e24,theta_r2_sq*1e24,chisq,"\n")
+        return theta_r1_sq*1e24,theta_r2_sq*1e24,chisq
 
     def chisqfuncerror(self,theta_r_sq,mean_chi2,g,T,Z,E_bv,valid_filters_this_row,curr_row):
 
@@ -1660,15 +1659,15 @@ class ChiSquared():
                 df1 = pd.DataFrame({
                     'row' : [i+2 for i in self.rows],
                     'weighted_mean_log(g1)' : self.mean_g1s,
-                    'sigma_log(g1)' : self.sigma_g1s,
+                    'weighted_sigma_log(g1)' : self.sigma_g1s,
                     'weighted_mean_T1/10000' : self.mean_T1s,
-                    'sigma_T1/10000 ' : self.sigma_T1s,
+                    'weighted_sigma_T1/10000 ' : self.sigma_T1s,
                     'weighted_mean_Z1' : self.mean_Z1s,
-                    'sigma_Z1 ' : self.sigma_Z1s,
+                    'weighted_sigma_Z1 ' : self.sigma_Z1s,
                     'weighted_mean_theta_r1/1e-12' : self.mean_theta_r1s,
-                    'sigma_theta_r1/1e-12 ' : self.sigma_theta_r1s,
+                    'weighted_sigma_theta_r1/1e-12 ' : self.sigma_theta_r1s,
                     'weighted_mean_ebv1' : self.mean_ebv1s,
-                    'sigma_ebv1 ' : self.sigma_ebv1s,
+                    'weighted_sigma_ebv1 ' : self.sigma_ebv1s,
                     'chi2_using_mean_parameters' : self.mean_chi2s,
                     'fitted_theta_r1/1e-12_to_mean_parameters' : self.newtheta_r1s,
                     'chi2_of_fitted_theta_r1/1e-12' : self.newchi2s})
@@ -1685,21 +1684,21 @@ class ChiSquared():
                 df1 = pd.DataFrame({
                     'row' : [i+2 for i in self.rows],
                     'weighted_mean_log(g1)' : self.mean_g1s,
-                    'sigma_log(g1)' : self.sigma_g1s,
+                    'weighted_sigma_log(g1)' : self.sigma_g1s,
                     'weighted_mean_T1/10000' : self.mean_T1s,
-                    'sigma_T1/10000' : self.sigma_T1s,
+                    'weighted_sigma_T1/10000' : self.sigma_T1s,
                     'weighted_mean_Z1' : self.mean_Z1s,
-                    'sigma_Z1' : self.sigma_Z1s,
+                    'weighted_sigma_Z1' : self.sigma_Z1s,
                     'weighted_mean_theta_r1' : self.mean_theta_r1s,
-                    'sigma_theta_r1' : self.sigma_theta_r1s,
+                    'weighted_sigma_theta_r1' : self.sigma_theta_r1s,
                     'weighted_mean_ebv1' : self.mean_ebv1s,
-                    'sigma_ebv1' : self.sigma_ebv1s,
+                    'weighted_sigma_ebv1' : self.sigma_ebv1s,
                     'weighted_mean_T2/10000' : self.mean_T2s,
-                    'sigma_T2/10000' : self.sigma_T2s,
+                    'weighted_sigma_T2/10000' : self.sigma_T2s,
                     'weighted_mean_theta_r2' : self.mean_theta_r2s,
-                    'sigma_theta_r2' : self.sigma_theta_r2s,
+                    'weighted_sigma_theta_r2' : self.sigma_theta_r2s,
                     'weighted_mean_ebv2' : self.mean_ebv2s,
-                    'sigma_ebv2' : self.sigma_ebv2s,
+                    'weighted_sigma_ebv2' : self.sigma_ebv2s,
                     'chi2_using_mean_parameters' : self.mean_chi2s,
                     'fitted_theta_r1_to_mean_parameters' : self.newtheta_r1s,
                     'fitted_theta_r2_to_mean_parameters' : self.newtheta_r2s,
